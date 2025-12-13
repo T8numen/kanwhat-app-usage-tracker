@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Progress ring preview for widget picker.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="ring"
+    android:innerRadiusRatio="3"
+    android:thicknessRatio="10"
+    android:useLevel="false">
+
+    <gradient
+        android:type="sweep"
+        android:startColor="#4CAF50"
+        android:centerColor="#4CAF50"
+        android:endColor="#3A3A3C"
+        android:centerX="0.5"
+        android:centerY="0.5" />
+
+</shape>
+

@@ -7,6 +7,9 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- Required for WorkManager to schedule widget updates after reboot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -16,6 +19,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppUsageTracker">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -23,10 +27,43 @@
             android:theme="@style/Theme.AppUsageTracker">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            Screen Time Widget Receiver
+            Uses Jetpack Glance for modern Compose-based widget rendering.
+
+            BATTERY OPTIMIZATION:
+            - updatePeriodMillis=0 in widget_info means NO system-triggered updates
+            - All updates controlled via WorkManager (30-60 min intervals)
+            - Widget reads from Room cache, never queries UsageStats directly
+        -->
+        <receiver
+            android:name=".widget.UsageTrackerWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/usage_widget_info" />
+        </receiver>
+
+        <!--
+            Boot Receiver for Widget Updates
+            Reschedules widget updates after device reboot.
+        -->
+        <receiver
+            android:name=".widget.WidgetBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

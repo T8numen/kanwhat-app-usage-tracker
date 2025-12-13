@@ -86,7 +86,7 @@ fun HomeScreen(
             usage.copy(
                 appIcon = try {
                     packageManager.getApplicationIcon(usage.packageName)
-                } catch (e: PackageManager.NameNotFoundException) {
+                } catch (_: PackageManager.NameNotFoundException) {
                     null
                 }
             )

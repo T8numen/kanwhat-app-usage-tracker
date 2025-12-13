@@ -16,6 +16,7 @@ val DarkBackground = Color(0xFF0A0A0F)
 val DarkSurface = Color(0xFF12121A)
 val DarkCard = Color(0xFF1A1A24)
 val DarkCardElevated = Color(0xFF22222E)
+val CardBackground = Color(0xFF1A1A24) // Alias for settings cards
 
 // Vibrant Accent Colors - Gradient Palette
 val AccentPrimary = Color(0xFF7C3AED) // Vibrant Purple

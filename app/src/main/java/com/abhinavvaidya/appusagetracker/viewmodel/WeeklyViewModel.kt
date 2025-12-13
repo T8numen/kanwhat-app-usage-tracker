@@ -1,15 +1,18 @@
 package com.abhinavvaidya.appusagetracker.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.abhinavvaidya.appusagetracker.data.local.UsageRepository
 import com.abhinavvaidya.appusagetracker.domain.model.AppUsageInfo
 import com.abhinavvaidya.appusagetracker.domain.model.DailyUsageSummary
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class WeeklyUiState(
     val isLoading: Boolean = false,
@@ -21,26 +24,48 @@ data class WeeklyUiState(
 
 class WeeklyViewModel(application: Application) : AndroidViewModel(application) {
 
+    companion object {
+        private const val TAG = "WeeklyViewModel"
+    }
+
     private val repository = UsageRepository(application)
 
     private val _uiState = MutableStateFlow(WeeklyUiState())
     val uiState: StateFlow<WeeklyUiState> = _uiState.asStateFlow()
 
     init {
+        Log.d(TAG, "WeeklyViewModel initialized")
         loadWeeklyUsage()
     }
 
     fun loadWeeklyUsage() {
         viewModelScope.launch {
+            Log.d(TAG, "Loading weekly usage...")
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                repository.refreshWeeklyUsage()
+                // Check permission first
+                if (!repository.hasUsagePermission()) {
+                    Log.w(TAG, "No usage permission")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "Usage access permission required"
+                    )
+                    return@launch
+                }
+
+                withContext(Dispatchers.IO) {
+                    repository.refreshWeeklyUsage()
+                }
 
                 repository.getWeeklyUsageFlow().collect { summaries ->
+                    Log.d(TAG, "Received ${summaries.size} daily summaries")
+
                     val totalMillis = summaries.sumOf { it.totalTimeMillis }
                     val hours = totalMillis / (1000 * 60 * 60)
                     val minutes = (totalMillis / (1000 * 60)) % 60
+
+                    Log.d(TAG, "Total weekly time: ${hours}h ${minutes}m")
 
                     // Aggregate top apps across all days
                     val appUsageMap = mutableMapOf<String, AppUsageInfo>()
@@ -59,6 +84,11 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
                         .sortedByDescending { it.usageTimeMillis }
                         .take(5)
 
+                    Log.d(TAG, "Top ${topApps.size} apps:")
+                    topApps.forEach { app ->
+                        Log.d(TAG, "  ${app.appName}: ${app.usageTimeMillis / 1000 / 60}m")
+                    }
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         dailySummaries = summaries,
@@ -67,9 +97,10 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
                     )
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Failed to load weekly data", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Failed to load weekly data"
+                    error = "Failed to load weekly data: ${e.message}"
                 )
             }
         }
@@ -79,6 +110,7 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
      * Called when app resumes to automatically refresh data
      */
     fun onResume() {
+        Log.d(TAG, "onResume called")
         loadWeeklyUsage()
     }
 }

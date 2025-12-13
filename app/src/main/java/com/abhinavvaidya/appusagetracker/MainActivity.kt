@@ -54,6 +54,7 @@ import androidx.navigation.compose.rememberNavController
 import com.abhinavvaidya.appusagetracker.ui.home.HomeScreen
 import com.abhinavvaidya.appusagetracker.ui.navigation.BottomNavItem
 import com.abhinavvaidya.appusagetracker.ui.permission.PermissionScreen
+import com.abhinavvaidya.appusagetracker.ui.settings.WidgetSettingsScreen
 import com.abhinavvaidya.appusagetracker.ui.theme.AccentPrimary
 import com.abhinavvaidya.appusagetracker.ui.theme.AccentSecondary
 import com.abhinavvaidya.appusagetracker.ui.theme.AppUsageTrackerTheme
@@ -122,6 +123,9 @@ fun UsageFlowApp() {
                     composable(BottomNavItem.Weekly.route) {
                         WeeklyScreen()
                     }
+                    composable(BottomNavItem.Settings.route) {
+                        WidgetSettingsScreen()
+                    }
                 }
             }
         }
@@ -130,7 +134,7 @@ fun UsageFlowApp() {
 
 @Composable
 fun ModernBottomNavigationBar(navController: NavHostController) {
-    val items = listOf(BottomNavItem.Home, BottomNavItem.Weekly)
+    val items = listOf(BottomNavItem.Home, BottomNavItem.Weekly, BottomNavItem.Settings)
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 

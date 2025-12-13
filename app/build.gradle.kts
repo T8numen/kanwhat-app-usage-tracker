@@ -63,6 +63,17 @@ dependencies {
     // Coil for image loading
     implementation(libs.coil.compose)
 
+    // WorkManager for battery-efficient background work
+    implementation(libs.androidx.work.runtime.ktx)
+
+    // DataStore for preferences
+    implementation(libs.androidx.datastore.preferences)
+
+    // Glance for modern Compose-based widgets
+    implementation(libs.androidx.glance)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
