@@ -5,64 +5,88 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
+    <path
+        android:name="background"
+        android:pathData="M8,30a26,26 0 0 1 26,-26h40a26,26 0 0 1 26,26v48a26,26 0 0 1 -26,26H34a26,26 0 0 1 -26,-26z"
+        android:fillColor="#12012A" />
+
     <group
+        android:name="pulse_group"
         android:pivotX="54"
-        android:pivotY="54"
-        android:scaleX="0.9"
-        android:scaleY="0.9"
-        android:translateX="5"
-        android:translateY="5">
-
+        android:pivotY="54">
         <path
-            android:pathData="M8,30a26,26 0 0 1 26,-26h40a26,26 0 0 1 26,26v48a26,26 0 0 1 -26,26H34a26,26 0 0 1 -26,-26z"
-            android:fillColor="#12012A" />
-
-        <path
+            android:name="pulse_circle"
             android:pathData="M54,12C31.909,12 14,29.909 14,52s17.909,40 40,40 40,-17.909 40,-40S76.091,12 54,12z"
             android:fillColor="#7C3AED"
             android:fillAlpha="0.2" />
+    </group>
 
+    <group
+        android:name="ring_group"
+        android:pivotX="54"
+        android:pivotY="54">
         <path
+            android:name="accent_ring"
             android:pathData="M54,20C35.67,20 21,34.67 21,53s14.67,33 33,33 33,-14.67 33,-33S72.33,20 54,20z"
             android:strokeColor="#EC4899"
             android:strokeWidth="6"
             android:strokeLineCap="round"
             android:strokeLineJoin="round"
-            android:fillColor="@android:color/transparent" />
+            android:fillColor="@android:color/transparent"
+            android:trimPathStart="0"
+            android:trimPathEnd="0.65"
+            android:trimPathOffset="0" />
+    </group>
 
+    <group
+        android:name="orbit_group"
+        android:pivotX="54"
+        android:pivotY="54">
         <path
+            android:name="orbit_upper"
             android:pathData="M28,40c7.5,-12 18.5,-20 26,-20 7.5,0 18.5,8 26,20"
             android:strokeColor="#60A5FA"
             android:strokeWidth="4"
             android:strokeLineCap="round"
             android:fillColor="@android:color/transparent" />
-
         <path
+            android:name="orbit_lower"
             android:pathData="M28,68c7.5,12 18.5,20 26,20 7.5,0 18.5,-8 26,-20"
             android:strokeColor="#F472B6"
             android:strokeWidth="4"
             android:strokeLineCap="round"
             android:fillColor="@android:color/transparent" />
+    </group>
 
+    <group
+        android:name="core_group"
+        android:pivotX="54"
+        android:pivotY="54">
         <path
+            android:name="core_shadow"
+            android:pathData="M39,32h30a8,8 0 0 1 8,8v36a8,8 0 0 1 -8,8H39a8,8 0 0 1 -8,-8V40a8,8 0 0 1 8,-8z"
+            android:fillColor="#19072D" />
+        <path
+            android:name="core_body"
             android:pathData="M42,36h24a6,6 0 0 1 6,6v30a6,6 0 0 1 -6,6H42a6,6 0 0 1 -6,-6V42a6,6 0 0 1 6,-6z"
             android:fillColor="#240C3F" />
-
         <path
+            android:name="core_top"
             android:pathData="M44,36h20a4,4 0 0 1 4,4v6H40v-6a4,4 0 0 1 4,-4z"
             android:fillColor="#EC4899" />
-
         <path
+            android:name="core_mid"
             android:pathData="M44,48h20a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4H44a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"
             android:fillColor="#7C3AED" />
-
         <path
+            android:name="core_bottom"
             android:pathData="M44,60h20a4,4 0 0 1 4,4v6a4,4 0 0 1 -4,4H44a4,4 0 0 1 -4,-4v-6a4,4 0 0 1 4,-4z"
             android:fillColor="#8B5CF6" />
-
         <path
+            android:name="core_glow"
             android:pathData="M54,50a6,6 0 1,0 0.01,0"
             android:fillColor="#FFFFFF"
             android:fillAlpha="0.9" />
     </group>
 </vector>
+

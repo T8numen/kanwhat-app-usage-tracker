@@ -1,12 +1,18 @@
 package com.abhinavvaidya.appusagetracker.widget
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.drawable.toBitmap
 import androidx.glance.GlanceId
+import androidx.glance.LocalContext
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
@@ -42,6 +48,7 @@ import com.abhinavvaidya.appusagetracker.data.preferences.WidgetPreferencesRepos
 import com.abhinavvaidya.appusagetracker.data.preferences.WidgetTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -98,10 +105,12 @@ class UsageTrackerWidget : GlanceAppWidget() {
             val showTopApp = prefsRepository.getShowTopApp()
 
             if (cache != null) {
+                val icon = cache.topAppPackageName?.let { getAppIconBitmap(context, it) }
                 WidgetDisplayData(
                     totalTimeFormatted = formatDuration(cache.totalScreenTimeMillis),
                     totalTimeMillis = cache.totalScreenTimeMillis,
                     topAppName = if (showTopApp) cache.topAppName else null,
+                    topAppIcon = if (showTopApp) icon else null,
                     topAppUsageFormatted = if (showTopApp) formatDuration(cache.topAppUsageMillis) else null,
                     lastUpdated = formatLastUpdated(cache.lastUpdatedTimestamp),
                     usageLevel = cache.usageLevel,
@@ -114,6 +123,7 @@ class UsageTrackerWidget : GlanceAppWidget() {
                     totalTimeFormatted = "0h 0m",
                     totalTimeMillis = 0L,
                     topAppName = null,
+                    topAppIcon = null,
                     topAppUsageFormatted = null,
                     lastUpdated = "Not yet updated",
                     usageLevel = 0,
@@ -128,6 +138,7 @@ class UsageTrackerWidget : GlanceAppWidget() {
                 totalTimeFormatted = "Error",
                 totalTimeMillis = 0L,
                 topAppName = null,
+                topAppIcon = null,
                 topAppUsageFormatted = null,
                 lastUpdated = "Tap to refresh",
                 usageLevel = 0,
@@ -135,6 +146,31 @@ class UsageTrackerWidget : GlanceAppWidget() {
                 theme = WidgetTheme.DARK_MINIMAL,
                 hasData = false
             )
+        }
+    }
+
+    private fun getAppIconBitmap(context: Context, packageName: String): Bitmap? {
+        return try {
+            val drawable = context.packageManager.getApplicationIcon(packageName)
+            val metrics = context.resources.displayMetrics
+            val fallbackSize = (48f * metrics.density).roundToInt().coerceAtLeast(1)
+            val maxSize = (64f * metrics.density).roundToInt().coerceAtLeast(fallbackSize)
+            val targetWidth = drawable.intrinsicWidth.takeIf { it > 0 }?.coerceAtMost(maxSize) ?: fallbackSize
+            val targetHeight = drawable.intrinsicHeight.takeIf { it > 0 }?.coerceAtMost(maxSize) ?: fallbackSize
+
+            if (drawable is BitmapDrawable && drawable.bitmap != null) {
+                val bitmap = drawable.bitmap
+                if (bitmap.width == targetWidth && bitmap.height == targetHeight) {
+                    bitmap
+                } else {
+                    Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+                }
+            } else {
+                drawable.toBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading app icon for $packageName", e)
+            null
         }
     }
 
@@ -165,6 +201,7 @@ data class WidgetDisplayData(
     val totalTimeFormatted: String,
     val totalTimeMillis: Long,
     val topAppName: String?,
+    val topAppIcon: Bitmap?,
     val topAppUsageFormatted: String?,
     val lastUpdated: String,
     val usageLevel: Int,           // 0=Low(green), 1=Medium(yellow), 2=High(red)
@@ -178,7 +215,8 @@ data class WidgetDisplayData(
  */
 @Composable
 private fun WidgetContent(data: WidgetDisplayData) {
-    val colors = getThemeColors(data.theme, data.usageLevel)
+    val context = LocalContext.current
+    val colors = getThemeColors(context, data.theme, data.usageLevel)
 
     Box(
         modifier = GlanceModifier
@@ -216,14 +254,24 @@ private fun WidgetContent(data: WidgetDisplayData) {
             // Top app (if available and enabled)
             if (data.topAppName != null && data.topAppUsageFormatted != null) {
                 Spacer(modifier = GlanceModifier.height(4.dp))
-                Text(
-                    text = "${data.topAppName}: ${data.topAppUsageFormatted}",
-                    style = TextStyle(
-                        color = colors.topApp,
-                        fontSize = 9.sp
-                    ),
-                    maxLines = 1
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (data.topAppIcon != null) {
+                        Image(
+                            provider = ImageProvider(data.topAppIcon),
+                            contentDescription = null,
+                            modifier = GlanceModifier.size(16.dp)
+                        )
+                        Spacer(modifier = GlanceModifier.width(4.dp))
+                    }
+                    Text(
+                        text = "${data.topAppName}: ${data.topAppUsageFormatted}",
+                        style = TextStyle(
+                            color = colors.topApp,
+                            fontSize = 9.sp
+                        ),
+                        maxLines = 1
+                    )
+                }
             }
 
             // Last updated timestamp
@@ -297,7 +345,9 @@ data class ThemeColors(
  * - Medium usage (yellow) = 2-4 hours
  * - High usage (red) = over 4 hours
  */
-private fun getThemeColors(theme: WidgetTheme, usageLevel: Int): ThemeColors {
+private fun getThemeColors(context: Context, theme: WidgetTheme, usageLevel: Int): ThemeColors {
+    fun c(id: Int) = ColorProvider(Color(context.getColor(id)))
+
     // Usage level colors (gamification) - map to color resources
     val levelColorRes = when (theme) {
         WidgetTheme.DARK_MINIMAL -> when (usageLevel) {
@@ -318,31 +368,31 @@ private fun getThemeColors(theme: WidgetTheme, usageLevel: Int): ThemeColors {
     }
     return when (theme) {
         WidgetTheme.DARK_MINIMAL -> ThemeColors(
-            background = ColorProvider(R.color.widget_background_dark),
-            primaryText = ColorProvider(R.color.widget_text_primary),
-            subtitle = ColorProvider(R.color.widget_text_secondary),
-            topApp = ColorProvider(R.color.widget_text_tertiary),
-            timestamp = ColorProvider(R.color.widget_text_tertiary),
-            progressTrack = ColorProvider(R.color.widget_progress_track),
-            progressFill = ColorProvider(levelColorRes)
+            background = c(R.color.widget_background_dark),
+            primaryText = c(R.color.widget_text_primary),
+            subtitle = c(R.color.widget_text_secondary),
+            topApp = c(R.color.widget_text_tertiary),
+            timestamp = c(R.color.widget_text_tertiary),
+            progressTrack = c(R.color.widget_progress_track),
+            progressFill = c(levelColorRes)
         )
         WidgetTheme.NEON_CYBER -> ThemeColors(
-            background = ColorProvider(R.color.widget_neon_background),
-            primaryText = ColorProvider(R.color.widget_neon_cyan),
-            subtitle = ColorProvider(R.color.widget_neon_magenta),
-            topApp = ColorProvider(R.color.widget_neon_green),
-            timestamp = ColorProvider(R.color.widget_neon_purple),
-            progressTrack = ColorProvider(R.color.widget_neon_background),
-            progressFill = ColorProvider(levelColorRes)
+            background = c(R.color.widget_neon_background),
+            primaryText = c(R.color.widget_neon_cyan),
+            subtitle = c(R.color.widget_neon_magenta),
+            topApp = c(R.color.widget_neon_green),
+            timestamp = c(R.color.widget_neon_purple),
+            progressTrack = c(R.color.widget_neon_background),
+            progressFill = c(levelColorRes)
         )
         WidgetTheme.SOFT_PASTEL -> ThemeColors(
-            background = ColorProvider(R.color.widget_pastel_background),
-            primaryText = ColorProvider(R.color.widget_pastel_text),
-            subtitle = ColorProvider(R.color.widget_pastel_text),
-            topApp = ColorProvider(R.color.widget_pastel_text),
-            timestamp = ColorProvider(R.color.widget_pastel_text),
-            progressTrack = ColorProvider(R.color.widget_pastel_background),
-            progressFill = ColorProvider(levelColorRes)
+            background = c(R.color.widget_pastel_background),
+            primaryText = c(R.color.widget_pastel_text),
+            subtitle = c(R.color.widget_pastel_text),
+            topApp = c(R.color.widget_pastel_text),
+            timestamp = c(R.color.widget_pastel_text),
+            progressTrack = c(R.color.widget_pastel_background),
+            progressFill = c(levelColorRes)
         )
     }
 }

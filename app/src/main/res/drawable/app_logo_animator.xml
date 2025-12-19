@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/app_logo_static">
+
+    <!-- Pulse grow/shrink -->
+    <target
+        android:name="pulse_group"
+        android:animation="@animator/logo_pulse_scale" />
+
+    <!-- Orbit rotation -->
+    <target
+        android:name="orbit_group"
+        android:animation="@animator/logo_orbit_rotate" />
+
+    <!-- Ring dash offset sweep -->
+    <target
+        android:name="accent_ring"
+        android:animation="@animator/logo_ring_dash" />
+
+    <!-- Core glow fade -->
+    <target
+        android:name="core_glow"
+        android:animation="@animator/logo_core_breathe" />
+
+</animated-vector>
