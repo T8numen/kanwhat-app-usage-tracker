@@ -245,7 +245,3 @@ Future enhancements being considered:
 - [ ] Focus mode integration
 - [ ] Dark/Light theme toggle
 
----
-
-**Made with ❤️ using Jetpack Compose**
-
