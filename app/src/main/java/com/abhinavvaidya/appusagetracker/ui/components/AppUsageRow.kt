@@ -1,10 +1,11 @@
 package com.abhinavvaidya.appusagetracker.ui.components
 
+import android.graphics.drawable.BitmapDrawable
+import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,9 +32,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.rememberAsyncImagePainter
 import com.abhinavvaidya.appusagetracker.domain.model.AppUsageInfo
 import com.abhinavvaidya.appusagetracker.ui.theme.AccentPrimary
 import com.abhinavvaidya.appusagetracker.ui.theme.DarkCardElevated
@@ -53,6 +53,9 @@ fun AppUsageRow(
     modifier: Modifier = Modifier,
     maxUsageMinutes: Long = 180L // 3 hours as max for progress calculation
 ) {
+    // Debug: Log icon status
+    Log.d("AppUsageRow", "${appUsageInfo.appName}: icon=${appUsageInfo.appIcon != null}")
+
     val usageMinutes = appUsageInfo.usageTimeMillis / (1000 * 60)
     val progress = (usageMinutes.toFloat() / maxUsageMinutes).coerceIn(0f, 1f)
 
@@ -115,16 +118,53 @@ fun AppUsageRow(
                         .padding(4.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (appUsageInfo.appIcon != null) {
-                        Image(
-                            painter = rememberAsyncImagePainter(appUsageInfo.appIcon),
-                            contentDescription = appUsageInfo.appName,
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                        )
-                    } else {
-                        // Placeholder
+                    appUsageInfo.appIcon?.let { drawable ->
+                        Log.d("AppUsageRow", "Rendering icon for ${appUsageInfo.appName}, type=${drawable.javaClass.simpleName}")
+                        // Convert Drawable to ImageBitmap for Compose
+                        val bitmap = remember(drawable) {
+                            try {
+                                if (drawable is BitmapDrawable) {
+                                    Log.d("AppUsageRow", "  Using BitmapDrawable directly")
+                                    drawable.bitmap
+                                } else {
+                                    // For non-bitmap drawables (e.g., VectorDrawables)
+                                    Log.d("AppUsageRow", "  Converting to Bitmap, size=${drawable.intrinsicWidth}x${drawable.intrinsicHeight}")
+                                    val bmp = android.graphics.Bitmap.createBitmap(
+                                        drawable.intrinsicWidth.coerceAtLeast(1),
+                                        drawable.intrinsicHeight.coerceAtLeast(1),
+                                        android.graphics.Bitmap.Config.ARGB_8888
+                                    )
+                                    val canvas = android.graphics.Canvas(bmp)
+                                    drawable.setBounds(0, 0, canvas.width, canvas.height)
+                                    drawable.draw(canvas)
+                                    Log.d("AppUsageRow", "  Bitmap created successfully")
+                                    bmp
+                                }
+                            } catch (e: Exception) {
+                                Log.e("AppUsageRow", "Error converting drawable to bitmap for ${appUsageInfo.appName}", e)
+                                null
+                            }
+                        }
+
+                        if (bitmap != null) {
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = appUsageInfo.appName,
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                            )
+                        } else {
+                            Log.w("AppUsageRow", "Bitmap is null for ${appUsageInfo.appName}, showing placeholder")
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(GradientPurple.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                            )
+                        }
+                    } ?: run {
+                        // Placeholder when icon is null
+                        Log.d("AppUsageRow", "No icon for ${appUsageInfo.appName}, showing placeholder")
                         Box(
                             modifier = Modifier
                                 .size(44.dp)

@@ -1,6 +1,8 @@
 package com.abhinavvaidya.appusagetracker.data.local
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.util.Log
 import com.abhinavvaidya.appusagetracker.domain.model.AppUsageInfo
 import com.abhinavvaidya.appusagetracker.domain.model.DailyUsageSummary
@@ -34,6 +36,29 @@ class UsageRepository(context: Context) {
     private val dao = database.appUsageDao()
     private val widgetCacheDao = database.widgetCacheDao()
     private val usageStatsHelper = UsageStatsHelper(context)
+    private val packageManager: PackageManager = context.packageManager
+
+    init {
+        Log.d(TAG, "UsageRepository initialized, packageManager=$packageManager")
+    }
+
+    /**
+     * Loads the app icon for the given package name.
+     * Returns null if the package is not found (common for system/virtual packages in emulators).
+     */
+    private fun getAppIcon(packageName: String): Drawable? {
+        return try {
+            packageManager.getApplicationIcon(packageName)
+        } catch (e: PackageManager.NameNotFoundException) {
+            // Package not found - this is expected for some system packages
+            // or uninstalled apps that still show in usage stats
+            Log.v(TAG, "Package $packageName not found for icon loading")
+            null
+        } catch (e: Exception) {
+            Log.w(TAG, "Error loading icon for $packageName: ${e.message}")
+            null
+        }
+    }
 
     /**
      * Checks if the app has Usage Access permission.
@@ -120,7 +145,7 @@ class UsageRepository(context: Context) {
                     packageName = entity.packageName,
                     appName = entity.appName,
                     usageTimeMillis = entity.usageTimeMillis,
-                    appIcon = null // Icons loaded in UI layer
+                    appIcon = getAppIcon(entity.packageName)
                 )
             }
         }
@@ -142,7 +167,7 @@ class UsageRepository(context: Context) {
                                 packageName = entity.packageName,
                                 appName = entity.appName,
                                 usageTimeMillis = entity.usageTimeMillis,
-                                appIcon = null
+                                appIcon = getAppIcon(entity.packageName)
                             )
                         }
                     )

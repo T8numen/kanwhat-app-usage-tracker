@@ -54,6 +54,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.abhinavvaidya.appusagetracker.ui.about.AboutScreen
 import com.abhinavvaidya.appusagetracker.ui.home.HomeScreen
 import com.abhinavvaidya.appusagetracker.ui.navigation.BottomNavItem
 import com.abhinavvaidya.appusagetracker.ui.permission.PermissionScreen
@@ -130,7 +131,18 @@ fun UsageFlowApp() {
                         WeeklyScreen()
                     }
                     composable(BottomNavItem.Settings.route) {
-                        WidgetSettingsScreen()
+                        WidgetSettingsScreen(
+                            onNavigateToAbout = {
+                                navController.navigate("about")
+                            }
+                        )
+                    }
+                    composable("about") {
+                        AboutScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
                     }
                 }
             }

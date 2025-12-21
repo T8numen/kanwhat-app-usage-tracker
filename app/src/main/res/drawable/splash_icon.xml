@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Splash Screen Icon
+    Android 12+ splash icons will be masked as a circle by the system.
+    The icon should be designed with the main content centered.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="192dp"
+    android:height="192dp"
+    android:viewportWidth="192"
+    android:viewportHeight="192">
+
+    <!-- Background for the icon (will be masked as circle) -->
+    <path
+        android:pathData="M0,0h192v192h-192z"
+        android:fillColor="#0A0015" />
+
+    <!-- Radial gradient effect background -->
+    <path
+        android:pathData="M96,32C60.65,32 32,60.65 32,96s28.65,64 64,64 64,-28.65 64,-64S131.35,32 96,32z"
+        android:fillColor="#7C3AED"
+        android:fillAlpha="0.15" />
+
+    <!-- Outer glow ring -->
+    <path
+        android:pathData="M96,38C63.97,38 38,63.97 38,96s25.97,58 58,58 58,-25.97 58,-58S128.03,38 96,38z"
+        android:fillColor="#7C3AED"
+        android:fillAlpha="0.08" />
+
+    <!-- Accent ring (partial) -->
+    <path
+        android:pathData="M96,46C68.39,46 46,68.39 46,96s22.39,50 50,50 50,-22.39 50,-50S123.61,46 96,46z"
+        android:strokeColor="#EC4899"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:trimPathStart="0"
+        android:trimPathEnd="0.6"
+        android:trimPathOffset="0.1" />
+
+    <!-- Secondary accent ring -->
+    <path
+        android:pathData="M96,46C68.39,46 46,68.39 46,96s22.39,50 50,50 50,-22.39 50,-50S123.61,46 96,46z"
+        android:strokeColor="#60A5FA"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:trimPathStart="0.7"
+        android:trimPathEnd="0.95"
+        android:trimPathOffset="0.1" />
+
+    <!-- Orbit upper -->
+    <path
+        android:pathData="M64,76c12,-18.5 26.5,-29 32,-29 5.5,0 20,10.5 32,29"
+        android:strokeColor="#60A5FA"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- Orbit lower -->
+    <path
+        android:pathData="M64,116c12,18.5 26.5,29 32,29 5.5,0 20,-10.5 32,-29"
+        android:strokeColor="#F472B6"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- Core shadow -->
+    <path
+        android:pathData="M80,68h32a8,8 0 0 1 8,8v42a8,8 0 0 1 -8,8H80a8,8 0 0 1 -8,-8V76a8,8 0 0 1 8,-8z"
+        android:fillColor="#19072D" />
+
+    <!-- Core body -->
+    <path
+        android:pathData="M82,70h28a7,7 0 0 1 7,7v40a7,7 0 0 1 -7,7H82a7,7 0 0 1 -7,-7V77a7,7 0 0 1 7,-7z"
+        android:fillColor="#240C3F" />
+
+    <!-- Core top section (pink) -->
+    <path
+        android:pathData="M84,70h24a5,5 0 0 1 5,5v10H79v-10a5,5 0 0 1 5,-5z"
+        android:fillColor="#EC4899" />
+
+    <!-- Core middle section (purple) -->
+    <path
+        android:pathData="M84,88h24a4,4 0 0 1 4,4v11a4,4 0 0 1 -4,4H84a4,4 0 0 1 -4,-4v-11a4,4 0 0 1 4,-4z"
+        android:fillColor="#7C3AED" />
+
+    <!-- Core bottom section (light purple) -->
+    <path
+        android:pathData="M84,110h24a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4H84a4,4 0 0 1 -4,-4v-8a4,4 0 0 1 4,-4z"
+        android:fillColor="#8B5CF6" />
+
+    <!-- Core glow center -->
+    <path
+        android:pathData="M96,95a5.5,5.5 0 1,0 0.01,0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.95" />
+
+    <!-- Small highlight dots -->
+    <path
+        android:pathData="M102,76a2,2 0 1,0 0.01,0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.7" />
+
+</vector>
+

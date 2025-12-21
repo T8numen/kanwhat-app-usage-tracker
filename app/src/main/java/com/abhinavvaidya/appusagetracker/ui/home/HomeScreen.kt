@@ -87,22 +87,9 @@ fun HomeScreen(
         }
     }
 
-    // Add icons to the usage list
-    val usageListWithIcons = remember(uiState.appUsageList) {
-        uiState.appUsageList.map { usage ->
-            usage.copy(
-                appIcon = try {
-                    packageManager.getApplicationIcon(usage.packageName)
-                } catch (_: PackageManager.NameNotFoundException) {
-                    null
-                }
-            )
-        }
-    }
-
     // Calculate max usage for progress bars
-    val maxUsageMinutes = remember(usageListWithIcons) {
-        usageListWithIcons.maxOfOrNull { it.usageTimeMillis / (1000 * 60) } ?: 180L
+    val maxUsageMinutes = remember(uiState.appUsageList) {
+        uiState.appUsageList.maxOfOrNull { it.usageTimeMillis / (1000 * 60) } ?: 180L
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -178,7 +165,7 @@ fun HomeScreen(
                 }
 
                 itemsIndexed(
-                    items = usageListWithIcons,
+                    items = uiState.appUsageList,
                     key = { _, item -> item.packageName }
                 ) { index, usage ->
                     AnimatedVisibility(

@@ -34,10 +34,11 @@
     <color name="brand_background">#05030A</color>
 
     <!-- Splash Screen Colors -->
-    <color name="splash_primary">#090016</color>
-    <color name="splash_secondary">#120026</color>
+    <color name="splash_primary">#0A0015</color>
+    <color name="splash_secondary">#120024</color>
     <color name="splash_glow">#FFFFFF</color>
     <color name="splash_glow_soft">#80FFFFFF</color>
     <color name="splash_electric_blue">#4C6BFF</color>
     <color name="splash_hot_pink">#FF4D8B</color>
+    <color name="splash_icon_bg">#0A0015</color>
 </resources>

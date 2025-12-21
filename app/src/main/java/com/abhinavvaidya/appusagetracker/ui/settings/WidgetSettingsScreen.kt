@@ -60,7 +60,8 @@ import com.abhinavvaidya.appusagetracker.viewmodel.WidgetSettingsViewModel
  */
 @Composable
 fun WidgetSettingsScreen(
-    viewModel: WidgetSettingsViewModel = viewModel()
+    viewModel: WidgetSettingsViewModel = viewModel(),
+    onNavigateToAbout: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
@@ -136,6 +137,11 @@ fun WidgetSettingsScreen(
         )
 
         Spacer(modifier = Modifier.height(32.dp))
+
+        // About option
+        AboutOption(onClick = onNavigateToAbout)
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Info Card
         InfoCard()
@@ -369,6 +375,41 @@ private fun SettingsToggle(
                     uncheckedTrackColor = CardBackground
                 )
             )
+        }
+    }
+}
+
+@Composable
+private fun AboutOption(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "About",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "App information and credits",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
+            }
         }
     }
 }

@@ -255,18 +255,20 @@ class UsageStatsHelper(private val context: Context) {
                 !isSystem
             }
             .map { (packageName, usageTime) ->
+                val icon = getAppIcon(packageName)
+                Log.v(TAG, "Loading icon for $packageName: ${if (icon != null) "✓" else "✗"}")
                 AppUsageInfo(
                     packageName = packageName,
                     appName = getAppName(packageName),
                     usageTimeMillis = usageTime,
-                    appIcon = null // Icons loaded in UI layer for performance
+                    appIcon = icon
                 )
             }
             .sortedByDescending { it.usageTimeMillis }
 
         Log.d(TAG, "Final result: ${result.size} apps")
         result.take(5).forEach { app ->
-            Log.d(TAG, "  ${app.appName}: ${app.usageTimeMillis / 1000 / 60}m ${(app.usageTimeMillis / 1000) % 60}s")
+            Log.d(TAG, "  ${app.appName}: ${app.usageTimeMillis / 1000 / 60}m ${(app.usageTimeMillis / 1000) % 60}s, icon=${app.appIcon != null}")
         }
 
         return result
@@ -469,13 +471,22 @@ class UsageStatsHelper(private val context: Context) {
      * Gets the icon for a package.
      * Note: Icons are loaded lazily in the UI layer for better performance.
      *
+     * Some packages (especially in emulators) may be reported by UsageStats but
+     * not be queryable via PackageManager. This is normal and we return null in such cases.
+     *
      * @param packageName Package name to look up
-     * @return Application icon drawable or null
+     * @return Application icon drawable or null if package not found
      */
     private fun getAppIcon(packageName: String): Drawable? {
         return try {
             packageManager.getApplicationIcon(packageName)
         } catch (e: PackageManager.NameNotFoundException) {
+            // This is expected for some system packages or uninstalled apps
+            // that still show up in usage stats (especially in emulators)
+            Log.v(TAG, "Package $packageName not found for icon loading (may be system/virtual package)")
+            null
+        } catch (e: Exception) {
+            Log.w(TAG, "Error loading icon for $packageName: ${e.message}")
             null
         }
     }

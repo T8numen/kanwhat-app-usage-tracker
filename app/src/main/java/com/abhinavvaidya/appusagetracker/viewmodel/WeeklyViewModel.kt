@@ -61,6 +61,14 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
                 repository.getWeeklyUsageFlow().collect { summaries ->
                     Log.d(TAG, "Received ${summaries.size} daily summaries")
 
+                    // Log icons for each summary
+                    summaries.forEach { summary ->
+                        Log.d(TAG, "Date ${summary.date}: ${summary.apps.size} apps")
+                        summary.apps.forEach { app ->
+                            Log.v(TAG, "  ${app.appName}: icon=${app.appIcon != null}")
+                        }
+                    }
+
                     val totalMillis = summaries.sumOf { it.totalTimeMillis }
                     val hours = totalMillis / (1000 * 60 * 60)
                     val minutes = (totalMillis / (1000 * 60)) % 60
@@ -72,8 +80,10 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
                     summaries.flatMap { it.apps }.forEach { app ->
                         val existing = appUsageMap[app.packageName]
                         if (existing != null) {
+                            // Preserve appIcon and other fields when aggregating
                             appUsageMap[app.packageName] = existing.copy(
-                                usageTimeMillis = existing.usageTimeMillis + app.usageTimeMillis
+                                usageTimeMillis = existing.usageTimeMillis + app.usageTimeMillis,
+                                appIcon = existing.appIcon ?: app.appIcon
                             )
                         } else {
                             appUsageMap[app.packageName] = app
@@ -86,7 +96,7 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
 
                     Log.d(TAG, "Top ${topApps.size} apps:")
                     topApps.forEach { app ->
-                        Log.d(TAG, "  ${app.appName}: ${app.usageTimeMillis / 1000 / 60}m")
+                        Log.d(TAG, "  ${app.appName}: ${app.usageTimeMillis / 1000 / 60}m, icon=${app.appIcon != null}")
                     }
 
                     _uiState.value = _uiState.value.copy(

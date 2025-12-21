@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Branding image for splash screen (Android 12+) - Clean minimal design -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="48dp"
+    android:viewportWidth="200"
+    android:viewportHeight="48">
+
+    <!-- Simple decorative line accent -->
+    <path
+        android:pathData="M70,12h60"
+        android:strokeColor="#7C3AED"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- Tagline: "Track. Manage. Balance." using simple dots and lines -->
+    <!-- Three dots representing the three concepts -->
+    <path
+        android:pathData="M85,24a2,2 0 1,0 0.01,0"
+        android:fillColor="#EC4899" />
+
+    <path
+        android:pathData="M100,24a2,2 0 1,0 0.01,0"
+        android:fillColor="#8B5CF6" />
+
+    <path
+        android:pathData="M115,24a2,2 0 1,0 0.01,0"
+        android:fillColor="#60A5FA" />
+
+    <!-- Bottom decorative line -->
+    <path
+        android:pathData="M70,36h60"
+        android:strokeColor="#7C3AED"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+
+</vector>
+

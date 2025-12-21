@@ -1,51 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Clean, minimal splash background with subtle gradient -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Base gradient background - deep purple -->
     <item>
         <shape android:shape="rectangle">
             <gradient
-                android:startColor="@color/splash_primary"
-                android:endColor="@color/splash_secondary"
+                android:startColor="#0A0015"
+                android:centerColor="#120024"
+                android:endColor="#0D001A"
+                android:type="linear"
                 android:angle="315" />
         </shape>
     </item>
 
-    <!-- Soft radial glow behind the logo -->
-    <item>
+    <!-- Subtle center glow for focus -->
+    <item
+        android:gravity="center">
         <shape android:shape="oval">
-            <size android:width="420dp" android:height="420dp" />
-            <solid android:color="@color/splash_glow_soft" />
+            <size android:width="400dp" android:height="400dp" />
+            <gradient
+                android:startColor="#157C3AED"
+                android:endColor="#00000000"
+                android:type="radial"
+                android:gradientRadius="200dp" />
         </shape>
     </item>
 
-    <!-- Accent blur blobs -->
-    <item android:bottom="-120dp" android:right="-60dp">
-        <shape android:shape="oval">
-            <size android:width="320dp" android:height="320dp" />
-            <gradient
-                android:startColor="@color/splash_electric_blue"
-                android:endColor="@android:color/transparent"
-                android:angle="0" />
-        </shape>
-    </item>
-
-    <item android:top="-160dp" android:left="-80dp">
-        <shape android:shape="oval">
-            <size android:width="360dp" android:height="360dp" />
-            <gradient
-                android:startColor="@color/splash_hot_pink"
-                android:endColor="@android:color/transparent"
-                android:angle="180" />
-        </shape>
-    </item>
-
-    <!-- Subtle vignette -->
-    <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:startColor="#00000000"
-                android:centerColor="#33000000"
-                android:endColor="#99000000"
-                android:angle="90" />
-        </shape>
-    </item>
 </layer-list>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AppUsageTracker</string>
+    <string name="app_name">App Usage Tracker</string>
 
     <!-- Widget strings -->
     <string name="widget_name">Screen Time Widget</string>

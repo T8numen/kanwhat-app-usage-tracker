@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Monochrome icon for themed icons on Android 13+
+    Used when device applies Material You theming to icons
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer circle ring -->
+    <path
+        android:pathData="M54,26C38.54,26 26,38.54 26,54s12.54,28 28,28 28,-12.54 28,-28S69.46,26 54,26z"
+        android:strokeColor="#000000"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- Core body -->
+    <path
+        android:pathData="M45,39h18a4,4 0 0 1 4,4v22a4,4 0 0 1 -4,4H45a4,4 0 0 1 -4,-4V43a4,4 0 0 1 4,-4z"
+        android:fillColor="#000000" />
+
+    <!-- Core sections lines -->
+    <path
+        android:pathData="M43,48h22M43,60h22"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="@android:color/transparent" />
+
+</vector>
+

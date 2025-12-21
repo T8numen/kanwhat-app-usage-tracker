@@ -1,6 +1,5 @@
 package com.abhinavvaidya.appusagetracker.ui.weekly
 
-import android.content.pm.PackageManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -76,7 +75,6 @@ fun WeeklyScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val packageManager = remember { context.packageManager }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // Auto-refresh on resume
@@ -92,20 +90,8 @@ fun WeeklyScreen(
         }
     }
 
-    val topAppsWithIcons = remember(uiState.topApps) {
-        uiState.topApps.map { app ->
-            app.copy(
-                appIcon = try {
-                    packageManager.getApplicationIcon(app.packageName)
-                } catch (e: PackageManager.NameNotFoundException) {
-                    null
-                }
-            )
-        }
-    }
-
-    val maxUsageMinutes = remember(topAppsWithIcons) {
-        topAppsWithIcons.maxOfOrNull { it.usageTimeMillis / (1000 * 60) } ?: 180L
+    val maxUsageMinutes = remember(uiState.topApps) {
+        uiState.topApps.maxOfOrNull { it.usageTimeMillis / (1000 * 60) } ?: 180L
     }
 
     // Calculate max daily usage for progress bars
@@ -189,14 +175,14 @@ fun WeeklyScreen(
                         )
                     }
                 }
-
-                if (topAppsWithIcons.isNotEmpty()) {
+                if (uiState.topApps.isNotEmpty()) {
+                    // Top Apps Section
                     item {
-                        SectionHeader(title = "Top Apps This Week")
+                        SectionHeader("Top Apps This Week")
                     }
 
                     itemsIndexed(
-                        items = topAppsWithIcons,
+                        items = uiState.topApps,
                         key = { _, item -> item.packageName }
                     ) { index, app ->
                         AnimatedVisibility(
