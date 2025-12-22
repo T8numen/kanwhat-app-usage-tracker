@@ -3,11 +3,18 @@
     "name": "AppUsageTracker",
     "slug": "appusagetracker",
     "sdkVersion": "48.0.0",
-    "platforms": ["android"],
+    "platforms": [
+      "android"
+    ],
     "version": "0.0.0",
     "android": {
       "package": "com.abhi.appusagetracker"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d40a6b72-2f23-4d60-9ad2-e84aa042da4e"
+      }
+    },
+    "owner": "abhi9vaidyas-organization"
   }
 }
-
