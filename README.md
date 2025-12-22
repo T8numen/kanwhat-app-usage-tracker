@@ -1,17 +1,3 @@
-# 📱 App Usage Tracker
-
-A modern Android application built with Jetpack Compose that helps users track and analyze their daily and weekly app usage patterns. Monitor screen time, set usage limits, and gain insights into your digital habits.
-
-![Android](https://img.shields.io/badge/Platform-Android-green.svg)
-![Kotlin](https://img.shields.io/badge/Language-Kotlin-blue.svg)
-![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4.svg)
-![Min API](https://img.shields.io/badge/Min%20API-26-orange.svg)
-![Target API](https://img.shields.io/badge/Target%20API-36-brightgreen.svg)
-
-## ✨ Features
-
-### 📊 Core Functionality
-- **Daily Usage Tracking**: Monitor app usage statistics for the current day
 - **Weekly Analytics**: View comprehensive weekly usage patterns with interactive charts
 - **Home Screen Widget**: Quick access to your screen time via Jetpack Glance widget
 - **Usage Stats Integration**: Leverages Android's UsageStatsManager API for accurate tracking
@@ -244,4 +230,5 @@ Future enhancements being considered:
 - [ ] Comparison with previous weeks
 - [ ] Focus mode integration
 - [ ] Dark/Light theme toggle
+
 
