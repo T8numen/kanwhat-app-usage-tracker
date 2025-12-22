@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "AppUsageTracker",
+    "slug": "appusagetracker",
+    "sdkVersion": "48.0.0",
+    "platforms": ["android"],
+    "version": "0.0.0",
+    "android": {
+      "package": "com.abhi.appusagetracker"
+    }
+  }
+}
+
