@@ -1,234 +1,57 @@
-- **Weekly Analytics**: View comprehensive weekly usage patterns with interactive charts
-- **Home Screen Widget**: Quick access to your screen time via Jetpack Glance widget
-- **Usage Stats Integration**: Leverages Android's UsageStatsManager API for accurate tracking
-- **Smart Caching**: Efficient Room database caching for optimal performance
+﻿# 看什么 (KanWhat)
 
-### 🎨 User Experience
-- **Material 3 Design**: Modern UI following Material Design 3 guidelines
-- **Dark Theme Support**: Beautiful dark purple theme (#1a0b2e)
-- **Animated Splash Screen**: Smooth splash screen with branding (Android 12+)
-- **Responsive Layout**: Adapts to different screen sizes and orientations
-- **Intuitive Navigation**: Bottom navigation bar for seamless screen transitions
+看什么是一个 Android 使用统计应用，用于查看每日与近 7 天的应用使用情况，并支持按包名过滤、系统应用排除、自定义背景图与多语言切换。
 
-### ⚙️ Advanced Features
-- **Widget Customization**: Configure widget update intervals and appearance
-- **Battery Optimization**: Smart WorkManager-based updates (30-60 min intervals)
-- **Efficient Updates**: Widget reads from cached data, not live queries
-- **Boot Persistence**: Automatically reschedules widget updates after device reboot
-- **ProGuard/R8**: Code obfuscation and optimization for release builds
+## 主要功能
+- 今日页圆环统计（含应用图标跟随占比）
+- 应用使用排行榜（可切换右侧指标：使用时长 / 启动次数 / 占比）
+- 7 天使用时长页面（柱状图 + 应用排行）
+- 日期左右切换查看历史天数据
+- 排除系统应用与自定义包名排除
+- 自定义背景图（主页与 7 天页面）
+- 中英文切换
 
-## 🏗️ Architecture
+## 隐私说明
+- 数据主要来源于 Android `UsageStatsManager`
+- 不上传个人使用数据到云端
+- 使用统计及配置保存在本地
 
-### Tech Stack
-- **Language**: Kotlin
-- **UI Framework**: Jetpack Compose
-- **Architecture**: MVVM (Model-View-ViewModel)
-- **Dependency Injection**: Manual DI with repository pattern
-- **Database**: Room (SQLite)
-- **Background Tasks**: WorkManager
-- **Widget Framework**: Jetpack Glance
-
-### Key Components
-```
-app/
-├── data/
-│   ├── local/              # Room database, DAOs, entities
-│   └── UsageRepository     # Data layer abstraction
-├── system/
-│   └── usage/              # UsageStatsManager wrapper
-├── ui/
-│   ├── components/         # Reusable UI components
-│   ├── home/               # Daily usage screen
-│   ├── weekly/             # Weekly analytics screen
-│   ├── settings/           # Widget configuration
-│   └── about/              # About screen
-├── viewmodel/              # ViewModels for state management
-└── widget/                 # Glance widget implementation
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Android Studio Hedgehog (2023.1.1) or newer
-- JDK 17 or higher
-- Android SDK API 26-36
-- Gradle 8.7+
-
-### Installation
-
-1. **Clone the repository**
+## 构建
 ```bash
-git clone https://github.com/abhi9vaidya/AppUsageTracker.git
-cd AppUsageTracker
+./gradlew :app:assembleDebug
 ```
 
-2. **Open in Android Studio**
-   - Open Android Studio
-   - Select "Open an Existing Project"
-   - Navigate to the cloned directory
-   - Wait for Gradle sync to complete
+Debug APK 默认输出（带版本号）：
+- `app/build/outputs/apk/debug/app-debug-v<versionName>-<versionCode>.apk`
 
-3. **Run the app**
-   - Connect an Android device or start an emulator (API 26+)
-   - Click the "Run" button (▶️) in Android Studio
-   - Grant "Usage Access" permission when prompted
+历史 Debug APK 归档目录：
+- `apk-history/debug/`
 
-### Required Permissions
-The app requires the following permission:
-- **PACKAGE_USAGE_STATS**: Access app usage statistics (user must grant via Settings)
-- **RECEIVE_BOOT_COMPLETED**: Reschedule widget updates after device reboot
+## 发布约定
+每次版本更新都执行以下动作：
+1. 更新 `app/build.gradle.kts` 中版本号。
+2. 更新 `CHANGELOG.md`。
+3. 构建 debug APK。
+4. 将对应 APK 保留在 `apk-history/debug/`。
+5. 推送源码到 GitHub。
+6. 创建 GitHub Release，并上传该版本 APK 资产。
 
-## 📦 Building for Release
+## 版本资产
+- `app-debug-v1.3.0-4.apk`
+- `app-debug-v1.4.0-5.apk`
+- `app-debug-v1.5.0-6.apk`
+- `app-debug-v1.5.1-7.apk`
 
-### Quick Start
-For detailed deployment instructions, see:
-- **[START_HERE.md](START_HERE.md)** - Simple step-by-step guide
-- **[QUICK_DEPLOYMENT_CHECKLIST.md](QUICK_DEPLOYMENT_CHECKLIST.md)** - Quick reference checklist
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Comprehensive deployment documentation
+> 以上 APK 同步保存在仓库目录 `apk-history/debug/`，并在 GitHub Releases 中提供下载。
 
-### Build Commands
+## 当前版本
+- Version Name: `1.5.1`
+- Version Code: `7`
 
-**Generate Debug APK:**
-```bash
-./gradlew assembleDebug
-```
+## 开发环境
+- Android Studio（Hedgehog+）
+- Kotlin + Jetpack Compose
+- Room + DataStore + WorkManager
 
-**Generate Release APK:**
-```bash
-./gradlew assembleRelease
-```
-
-**Generate Release Bundle (for Play Store):**
-```bash
-./gradlew bundleRelease
-```
-
-### Signing Configuration
-1. Copy `keystore.properties.template` to `keystore.properties`
-2. Update with your keystore credentials:
-```properties
-storePassword=YOUR_KEYSTORE_PASSWORD
-keyPassword=YOUR_KEY_PASSWORD
-keyAlias=your-key-alias
-storeFile=path/to/your/keystore.jks
-```
-
-**⚠️ Important**: Never commit `keystore.properties` to version control!
-
-## 📱 App Screens
-
-### Home Screen
-- Current date display
-- Total screen time for today
-- List of apps with usage duration
-- Pull-to-refresh functionality
-- Navigation to other screens
-
-### Weekly Screen
-- 7-day usage overview
-- Interactive bar chart visualization
-- Daily breakdown with total hours
-- Average daily usage calculation
-- Color-coded usage levels
-
-### Settings Screen
-- Widget update interval configuration
-- App theme preferences
-- About section with version info
-- Privacy policy link
-
-### Widget
-- Compact home screen widget
-- Shows top 3 most used apps
-- Total daily screen time
-- Customizable update frequency
-- Battery-efficient background updates
-
-## 🔒 Privacy & Security
-
-- **Local Storage Only**: All data stored locally in Room database
-- **No Network Access**: App does not connect to the internet
-- **No Analytics**: Zero third-party tracking or analytics
-- **User Control**: Users can clear data anytime via Android Settings
-- **See**: [PRIVACY_POLICY.md](PRIVACY_POLICY.md) for details
-
-## 🛠️ Development
-
-### Dependencies
-Key libraries used in this project:
-- **Jetpack Compose**: Modern declarative UI
-- **Room**: Local database with SQLite
-- **WorkManager**: Background task scheduling
-- **Glance**: Widget framework
-- **Material 3**: UI components and theming
-- **Lifecycle & ViewModel**: State management
-- **KSP**: Kotlin Symbol Processing for Room
-
-See [gradle/libs.versions.toml](gradle/libs.versions.toml) for complete dependency list.
-
-### Code Structure
-- **MVVM Pattern**: Separation of concerns with ViewModels
-- **Repository Pattern**: Abstracts data sources
-- **Dependency Injection**: Constructor injection for testability
-- **Kotlin Coroutines**: Asynchronous programming
-- **StateFlow**: Reactive state management
-
-### Build Variants
-- **Debug**: Development build with debugging enabled
-- **Release**: Production build with ProGuard optimization
-
-## 📝 Version History
-
-### Version 1.0 (Current)
-- Initial release
-- Daily and weekly usage tracking
-- Home screen widget
-- Material 3 design
-- Battery-optimized background updates
-- ProGuard/R8 optimization
-
-## 🤝 Contributing
-
-This is a personal project, but suggestions and feedback are welcome!
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is available for personal and educational use. Please provide attribution if you use significant portions of the code.
-
-## 👨‍💻 Author
-
-**Abhinav Vaidya**
-- GitHub: [@abhi9vaidya](https://github.com/abhi9vaidya)
-
-## 🙏 Acknowledgments
-
-- Built with Android Jetpack libraries
-- Inspired by Digital Wellbeing apps
-- Material Design 3 guidelines
-- Android developer community
-
-## 📞 Support
-
-For issues, questions, or suggestions:
-- Open an issue on GitHub
-- Check existing documentation in the repo
-- Review the deployment guides for common problems
-
-## 🗺️ Roadmap
-
-Future enhancements being considered:
-- [ ] Custom time range selection
-- [ ] App category grouping
-- [ ] Usage goals and alerts
-- [ ] Export data to CSV
-- [ ] Comparison with previous weeks
-- [ ] Focus mode integration
-- [ ] Dark/Light theme toggle
-
-
+## 许可证
+仅供学习与个人使用。

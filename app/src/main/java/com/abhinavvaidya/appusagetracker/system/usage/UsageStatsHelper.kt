@@ -4,7 +4,7 @@ import android.app.AppOpsManager
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
-import android.content.pm.ApplicationInfo
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -15,16 +15,13 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-/**
- * Helper class for fetching app usage statistics from Android's UsageStatsManager.
- *
- * IMPORTANT NOTES:
- * 1. This class requires PACKAGE_USAGE_STATS permission to be granted via Settings
- * 2. Permission MUST be checked before any query to avoid empty/incorrect results
- * 3. Time windows must be calculated correctly (start of day to current time for today)
- * 4. Some OEMs (Samsung, MIUI) may have delayed data availability after permission grant
- * 5. UsageStats aggregates data, so we use INTERVAL_DAILY for daily stats
- */
+data class DailyBehaviorMetrics(
+    val launchCount: Int,
+    val unlockCount: Int,
+    val notificationCount: Int,
+    val timeFragmentPercent: Int
+)
+
 class UsageStatsHelper(private val context: Context) {
 
     private val usageStatsManager: UsageStatsManager? by lazy {
@@ -42,18 +39,32 @@ class UsageStatsHelper(private val context: Context) {
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-    companion object {
-        private const val TAG = "UsageStatsHelper"
-        // Minimum usage threshold (30 seconds) to filter out brief app launches
-        private const val MIN_USAGE_MS = 30_000L
+    private data class LauncherAppEntry(
+        val label: String,
+        val icon: Drawable?
+    )
+
+    private data class UsageEventsData(
+        val durations: Map<String, Long>,
+        val launches: Map<String, Int>,
+        val totalLaunches: Int,
+        val unlockCount: Int,
+        val notificationCount: Int,
+        val totalSessions: Int,
+        val shortSessions: Int
+    )
+
+    private val launcherAppCache: Map<String, LauncherAppEntry> by lazy {
+        loadLauncherAppCache()
     }
 
-    /**
-     * Checks if the app has Usage Access permission using AppOpsManager.
-     * This MUST be called before any usage queries.
-     *
-     * @return true if permission is granted, false otherwise
-     */
+    companion object {
+        private const val TAG = "UsageStatsHelper"
+        private const val MIN_USAGE_MS = 30_000L
+        private const val SHORT_SESSION_MS = 60_000L
+        private const val EVENT_NOTIFICATION_INTERRUPTION = 12
+    }
+
     fun hasUsagePermission(): Boolean {
         return try {
             val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager
@@ -74,72 +85,71 @@ class UsageStatsHelper(private val context: Context) {
                 )
             }
 
-            val hasPermission = mode == AppOpsManager.MODE_ALLOWED
-            Log.d(TAG, "Usage permission check: $hasPermission (mode=$mode)")
-            hasPermission
+            mode == AppOpsManager.MODE_ALLOWED
         } catch (e: Exception) {
             Log.e(TAG, "Error checking usage permission", e)
             false
         }
     }
 
-    /**
-     * Fetches today's app usage data.
-     *
-     * Time window: Start of today (00:00:00.000) to current time
-     * This ensures we capture all usage for the current day.
-     *
-     * @return List of AppUsageInfo sorted by usage time (descending), empty list if no permission
-     */
     fun getTodayUsage(): List<AppUsageInfo> {
-        // CRITICAL: Always check permission before querying
         if (!hasUsagePermission()) {
-            Log.w(TAG, "getTodayUsage: No usage permission, returning empty list")
+            Log.w(TAG, "getTodayUsage: No usage permission")
             return emptyList()
         }
 
-        // Calculate start of today at midnight
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        val startTime = calendar.timeInMillis
-        val endTime = System.currentTimeMillis()
-
-        Log.d(TAG, "getTodayUsage: Querying from ${formatTimestamp(startTime)} to ${formatTimestamp(endTime)}")
-
+        val (startTime, endTime) = getTimeRange(0)
         return getUsageForTimeRange(startTime, endTime, isToday = true)
     }
 
-    /**
-     * Fetches app usage data for a specific day.
-     *
-     * @param daysAgo Number of days in the past (0 = today, 1 = yesterday, etc.)
-     * @return List of AppUsageInfo sorted by usage time (descending), empty list if no permission
-     */
     fun getUsageForDate(daysAgo: Int): List<AppUsageInfo> {
-        // CRITICAL: Always check permission before querying
         if (!hasUsagePermission()) {
-            Log.w(TAG, "getUsageForDate: No usage permission, returning empty list")
+            Log.w(TAG, "getUsageForDate: No usage permission")
             return emptyList()
         }
 
+        val safeDaysAgo = daysAgo.coerceAtLeast(0)
+        val (startTime, endTime) = getTimeRange(safeDaysAgo)
+        return getUsageForTimeRange(startTime, endTime, isToday = safeDaysAgo == 0)
+    }
+
+    fun getBehaviorMetricsForDate(daysAgo: Int): DailyBehaviorMetrics {
+        if (!hasUsagePermission()) {
+            return DailyBehaviorMetrics(
+                launchCount = 0,
+                unlockCount = 0,
+                notificationCount = 0,
+                timeFragmentPercent = 0
+            )
+        }
+
+        val safeDaysAgo = daysAgo.coerceAtLeast(0)
+        val (startTime, endTime) = getTimeRange(safeDaysAgo)
+        val eventsData = getUsageFromEvents(startTime, endTime)
+
+        val fragmentPercent = if (eventsData.totalSessions > 0) {
+            ((eventsData.shortSessions * 100f) / eventsData.totalSessions.toFloat()).toInt().coerceIn(0, 100)
+        } else {
+            0
+        }
+
+        return DailyBehaviorMetrics(
+            launchCount = eventsData.totalLaunches,
+            unlockCount = eventsData.unlockCount,
+            notificationCount = eventsData.notificationCount,
+            timeFragmentPercent = fragmentPercent
+        )
+    }
+
+    private fun getTimeRange(daysAgo: Int): Pair<Long, Long> {
         val calendar = Calendar.getInstance()
-
-        // Set to the target date
         calendar.add(Calendar.DAY_OF_YEAR, -daysAgo)
-
-        // Start of day: 00:00:00.000
         calendar.set(Calendar.HOUR_OF_DAY, 0)
         calendar.set(Calendar.MINUTE, 0)
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
         val startTime = calendar.timeInMillis
 
-        // End of day: for today use current time, for past days use 23:59:59.999
         val endTime = if (daysAgo == 0) {
             System.currentTimeMillis()
         } else {
@@ -150,37 +160,15 @@ class UsageStatsHelper(private val context: Context) {
             calendar.timeInMillis
         }
 
-        Log.d(TAG, "getUsageForDate($daysAgo): Querying from ${formatTimestamp(startTime)} to ${formatTimestamp(endTime)}")
-
-        return getUsageForTimeRange(startTime, endTime, isToday = daysAgo == 0)
+        return startTime to endTime
     }
 
-    /**
-     * Core method to fetch usage statistics for a given time range.
-     *
-     * FIXED ISSUES:
-     * 1. Now properly checks permission before querying (prevents empty results)
-     * 2. Uses INTERVAL_DAILY as primary source (most reliable across devices)
-     * 3. Uses UsageEvents for today's data to capture real-time foreground usage
-     * 4. Properly aggregates data by package name
-     * 5. Handles OEM edge cases with proper null checks
-     *
-     * @param startTime Start of time range in milliseconds
-     * @param endTime End of time range in milliseconds
-     * @param isToday Whether this query is for today (enables UsageEvents for real-time data)
-     * @return List of AppUsageInfo sorted by usage time (descending)
-     */
-    private fun getUsageForTimeRange(startTime: Long, endTime: Long, isToday: Boolean = false): List<AppUsageInfo> {
-        val statsManager = usageStatsManager
-        if (statsManager == null) {
-            Log.e(TAG, "UsageStatsManager is null, cannot query usage stats")
-            return emptyList()
-        }
+    private fun getUsageForTimeRange(startTime: Long, endTime: Long, isToday: Boolean): List<AppUsageInfo> {
+        val statsManager = usageStatsManager ?: return emptyList()
 
         val aggregatedStats = mutableMapOf<String, Long>()
+        val launchCounts = mutableMapOf<String, Int>()
 
-        // PRIMARY METHOD: Query usage stats with INTERVAL_DAILY
-        // This is the most reliable method across different Android versions and OEMs
         try {
             val dailyStats = statsManager.queryUsageStats(
                 UsageStatsManager.INTERVAL_DAILY,
@@ -188,315 +176,290 @@ class UsageStatsHelper(private val context: Context) {
                 endTime
             )
 
-            if (dailyStats.isNullOrEmpty()) {
-                Log.d(TAG, "INTERVAL_DAILY returned no stats")
-            } else {
-                Log.d(TAG, "INTERVAL_DAILY returned ${dailyStats.size} entries")
+            dailyStats?.forEach { stats ->
+                val packageName = normalizePackageName(stats.packageName)
+                if (packageName.isBlank()) return@forEach
 
-                for (stats in dailyStats) {
-                    val packageName = stats.packageName
-                    val totalTime = stats.totalTimeInForeground
-
-                    if (totalTime > 0) {
-                        // Aggregate usage per package (same package can appear multiple times)
-                        val current = aggregatedStats[packageName] ?: 0L
-                        aggregatedStats[packageName] = current + totalTime
-                        Log.v(TAG, "Package: $packageName, Time: ${totalTime}ms, Accumulated: ${aggregatedStats[packageName]}ms")
-                    }
+                val totalTime = stats.totalTimeInForeground
+                if (totalTime > 0) {
+                    aggregatedStats[packageName] = (aggregatedStats[packageName] ?: 0L) + totalTime
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error querying INTERVAL_DAILY usage stats", e)
         }
 
-        // SECONDARY METHOD (for today only): Use UsageEvents for real-time accuracy
-        // UsageEvents provides more accurate foreground time for current-day tracking
-        // because it captures the actual ACTIVITY_RESUMED and ACTIVITY_PAUSED events
-        if (isToday) {
-            try {
-                val eventsStats = getUsageFromEvents(startTime, endTime)
-                Log.d(TAG, "UsageEvents returned ${eventsStats.size} entries")
+        try {
+            val eventsData = getUsageFromEvents(startTime, endTime)
 
-                for ((packageName, time) in eventsStats) {
-                    if (time > 0) {
-                        // Take the maximum of events-based and stats-based time
-                        // Events are more accurate for today's data
-                        val current = aggregatedStats[packageName] ?: 0L
-                        val newValue = maxOf(current, time)
-                        if (newValue != current) {
-                            Log.v(TAG, "Using events time for $packageName: ${time}ms (was ${current}ms)")
-                        }
-                        aggregatedStats[packageName] = newValue
-                    }
+            if (isToday || aggregatedStats.isEmpty()) {
+                for ((packageName, time) in eventsData.durations) {
+                    val current = aggregatedStats[packageName] ?: 0L
+                    aggregatedStats[packageName] = maxOf(current, time)
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error querying usage events", e)
             }
+
+            for ((packageName, launches) in eventsData.launches) {
+                if (launches > 0) {
+                    launchCounts[packageName] = (launchCounts[packageName] ?: 0) + launches
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error querying usage events", e)
         }
 
-        Log.d(TAG, "Total unique packages with usage: ${aggregatedStats.size}")
-
-        // Filter and transform results
-        val result = aggregatedStats
-            .filter { (packageName, usageTime) ->
-                // Filter out apps with usage below threshold
-                val passesMinimum = usageTime >= MIN_USAGE_MS
-                if (!passesMinimum) {
-                    Log.v(TAG, "Filtered $packageName: usage ${usageTime}ms below minimum $MIN_USAGE_MS")
-                }
-                passesMinimum
-            }
-            .filter { (packageName, _) ->
-                // Filter out system packages that are not user-facing
-                val isSystem = isSystemApp(packageName)
-                if (isSystem) {
-                    Log.v(TAG, "Filtered $packageName: system app")
-                }
-                !isSystem
-            }
+        return aggregatedStats
+            .filter { (_, usageTime) -> usageTime >= MIN_USAGE_MS }
             .map { (packageName, usageTime) ->
-                val icon = getAppIcon(packageName)
-                Log.v(TAG, "Loading icon for $packageName: ${if (icon != null) "✓" else "✗"}")
                 AppUsageInfo(
                     packageName = packageName,
                     appName = getAppName(packageName),
                     usageTimeMillis = usageTime,
-                    appIcon = icon
+                    appIcon = getAppIcon(packageName),
+                    launchCount = launchCounts[packageName] ?: 0
                 )
             }
             .sortedByDescending { it.usageTimeMillis }
-
-        Log.d(TAG, "Final result: ${result.size} apps")
-        result.take(5).forEach { app ->
-            Log.d(TAG, "  ${app.appName}: ${app.usageTimeMillis / 1000 / 60}m ${(app.usageTimeMillis / 1000) % 60}s, icon=${app.appIcon != null}")
-        }
-
-        return result
     }
 
-    /**
-     * Calculates usage time from UsageEvents.
-     *
-     * This method iterates through usage events and calculates foreground time by
-     * tracking ACTIVITY_RESUMED and ACTIVITY_PAUSED event pairs.
-     *
-     * BENEFITS over queryUsageStats:
-     * - More accurate for current-day data
-     * - Captures apps currently in foreground
-     * - Real-time usage tracking
-     *
-     * @param startTime Start of time range in milliseconds
-     * @param endTime End of time range in milliseconds
-     * @return Map of package name to usage time in milliseconds
-     */
-    private fun getUsageFromEvents(startTime: Long, endTime: Long): Map<String, Long> {
-        val statsManager = usageStatsManager ?: return emptyMap()
+    private fun getUsageFromEvents(startTime: Long, endTime: Long): UsageEventsData {
+        val statsManager = usageStatsManager ?: return UsageEventsData(
+            durations = emptyMap(),
+            launches = emptyMap(),
+            totalLaunches = 0,
+            unlockCount = 0,
+            notificationCount = 0,
+            totalSessions = 0,
+            shortSessions = 0
+        )
 
         val usageMap = mutableMapOf<String, Long>()
+        val launchMap = mutableMapOf<String, Int>()
         val lastResumeTime = mutableMapOf<String, Long>()
+
+        var totalLaunches = 0
+        var unlockCount = 0
+        var notificationCount = 0
+        var totalSessions = 0
+        var shortSessions = 0
 
         try {
             val usageEvents = statsManager.queryEvents(startTime, endTime)
             if (usageEvents == null) {
-                Log.d(TAG, "queryEvents returned null")
-                return emptyMap()
+                return UsageEventsData(
+                    durations = emptyMap(),
+                    launches = emptyMap(),
+                    totalLaunches = 0,
+                    unlockCount = 0,
+                    notificationCount = 0,
+                    totalSessions = 0,
+                    shortSessions = 0
+                )
             }
 
             val event = UsageEvents.Event()
-            var eventCount = 0
-
             while (usageEvents.hasNextEvent()) {
                 usageEvents.getNextEvent(event)
-                eventCount++
-                val packageName = event.packageName ?: continue
+                val rawPackageName = event.packageName ?: continue
+                val packageName = normalizePackageName(rawPackageName)
+                if (packageName.isBlank()) continue
 
                 when (event.eventType) {
-                    // App moved to foreground
                     UsageEvents.Event.ACTIVITY_RESUMED -> {
+                        launchMap[packageName] = (launchMap[packageName] ?: 0) + 1
+                        totalLaunches += 1
                         lastResumeTime[packageName] = event.timeStamp
                     }
-                    // Deprecated but still used on older devices
+
                     @Suppress("DEPRECATION")
                     UsageEvents.Event.MOVE_TO_FOREGROUND -> {
                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                            if (!lastResumeTime.containsKey(packageName)) {
+                                launchMap[packageName] = (launchMap[packageName] ?: 0) + 1
+                                totalLaunches += 1
+                            }
                             lastResumeTime[packageName] = event.timeStamp
                         }
                     }
-                    // App moved to background
+
                     UsageEvents.Event.ACTIVITY_PAUSED -> {
-                        val resumeTime = lastResumeTime.remove(packageName)
-                        if (resumeTime != null && resumeTime > 0) {
-                            val duration = event.timeStamp - resumeTime
-                            if (duration > 0 && duration < 24 * 60 * 60 * 1000) { // Sanity check: < 24 hours
-                                usageMap[packageName] = (usageMap[packageName] ?: 0L) + duration
+                        val resumeTime = lastResumeTime.remove(packageName) ?: continue
+                        val duration = event.timeStamp - resumeTime
+                        if (duration > 0 && duration < 24 * 60 * 60 * 1000) {
+                            usageMap[packageName] = (usageMap[packageName] ?: 0L) + duration
+                            totalSessions += 1
+                            if (duration <= SHORT_SESSION_MS) {
+                                shortSessions += 1
                             }
                         }
                     }
-                    // Deprecated but still used on older devices
+
                     @Suppress("DEPRECATION")
                     UsageEvents.Event.MOVE_TO_BACKGROUND -> {
                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                            val resumeTime = lastResumeTime.remove(packageName)
-                            if (resumeTime != null && resumeTime > 0) {
-                                val duration = event.timeStamp - resumeTime
-                                if (duration > 0 && duration < 24 * 60 * 60 * 1000) {
-                                    usageMap[packageName] = (usageMap[packageName] ?: 0L) + duration
+                            val resumeTime = lastResumeTime.remove(packageName) ?: continue
+                            val duration = event.timeStamp - resumeTime
+                            if (duration > 0 && duration < 24 * 60 * 60 * 1000) {
+                                usageMap[packageName] = (usageMap[packageName] ?: 0L) + duration
+                                totalSessions += 1
+                                if (duration <= SHORT_SESSION_MS) {
+                                    shortSessions += 1
                                 }
                             }
                         }
                     }
+
+                    UsageEvents.Event.KEYGUARD_HIDDEN -> {
+                        unlockCount += 1
+                    }
+
+                    EVENT_NOTIFICATION_INTERRUPTION -> {
+                        notificationCount += 1
+                    }
                 }
             }
 
-            Log.d(TAG, "Processed $eventCount usage events")
-
-            // Account for apps that are still in foreground (no PAUSED event yet)
             val currentTime = System.currentTimeMillis().coerceAtMost(endTime)
             for ((packageName, resumeTime) in lastResumeTime) {
                 if (resumeTime > 0 && currentTime > resumeTime) {
                     val duration = currentTime - resumeTime
                     if (duration > 0 && duration < 24 * 60 * 60 * 1000) {
                         usageMap[packageName] = (usageMap[packageName] ?: 0L) + duration
-                        Log.d(TAG, "App $packageName still in foreground, adding ${duration}ms")
+                        totalSessions += 1
+                        if (duration <= SHORT_SESSION_MS) {
+                            shortSessions += 1
+                        }
                     }
                 }
             }
         } catch (e: SecurityException) {
-            Log.e(TAG, "SecurityException querying events - permission may have been revoked", e)
+            Log.e(TAG, "SecurityException querying usage events", e)
         } catch (e: Exception) {
             Log.e(TAG, "Error processing usage events", e)
         }
 
-        return usageMap
+        return UsageEventsData(
+            durations = usageMap,
+            launches = launchMap,
+            totalLaunches = totalLaunches,
+            unlockCount = unlockCount,
+            notificationCount = notificationCount,
+            totalSessions = totalSessions,
+            shortSessions = shortSessions
+        )
     }
 
-    /**
-     * Helper method to format timestamp for logging
-     */
-    private fun formatTimestamp(timestamp: Long): String {
-        return SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(timestamp)
-    }
-
-    /**
-     * Determines if a package is a system component that should be filtered out.
-     *
-     * IMPORTANT: We only filter out core system components, NOT user-facing system apps.
-     * Examples of what we KEEP:
-     * - Play Store (com.android.vending)
-     * - Google apps (com.google.*)
-     * - Pre-installed apps that users actually interact with
-     *
-     * Examples of what we FILTER:
-     * - System UI (com.android.systemui)
-     * - Core system processes (android)
-     * - Input methods (when not actively used by user)
-     *
-     * @param packageName Package name to check
-     * @return true if the package should be filtered out
-     */
-    private fun isSystemApp(packageName: String): Boolean {
-        // Whitelist: These should NEVER be filtered even if they're system apps
-        val whitelistPrefixes = listOf(
-            "com.google.android.apps.", // Google apps (Gmail, Maps, etc.)
-            "com.google.android.youtube",
-            "com.android.chrome",
-            "com.android.vending", // Play Store
-        )
-
-        if (whitelistPrefixes.any { packageName.startsWith(it) }) {
-            return false
-        }
-
-        // Blacklist: Core system components that should always be filtered
-        val blacklistPrefixes = listOf(
-            "com.android.systemui",
-            "com.android.settings",
-            "com.android.phone",
-            "com.android.incallui",
-            "com.android.server",
-            "com.android.providers.",
-            "com.android.inputmethod",
-            "com.google.android.inputmethod",
-            "com.android.internal",
-            "com.android.keyguard",
-            "com.android.launcher", // Default launcher
-            "com.android.packageinstaller",
-            "com.android.permissioncontroller",
-        )
-
-        val blacklistExact = listOf(
-            "android",
-            "com.android.shell",
-        )
-
-        if (blacklistExact.contains(packageName) ||
-            blacklistPrefixes.any { packageName.startsWith(it) }) {
-            return true
-        }
-
-        // For other apps, check if they're pure system components
-        return try {
-            val appInfo = packageManager.getApplicationInfo(packageName, 0)
-            val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-            val isUpdatedSystemApp = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
-
-            // Only filter pure system apps that haven't been updated by the user
-            // Updated system apps are likely user-facing (e.g., pre-installed apps that got updates)
-            isSystemApp && !isUpdatedSystemApp
-        } catch (e: PackageManager.NameNotFoundException) {
-            // If we can't get app info, it might be uninstalled - filter it
-            Log.v(TAG, "Package not found: $packageName")
-            true
-        }
-    }
-
-    /**
-     * Gets the display name for a package.
-     *
-     * @param packageName Package name to look up
-     * @return Application label or fallback to simplified package name
-     */
     private fun getAppName(packageName: String): String {
+        val normalizedPackageName = normalizePackageName(packageName)
+
+        val cachedLabel = launcherAppCache[normalizedPackageName]?.label?.trim().orEmpty()
+        if (cachedLabel.isNotBlank() && !isLikelySuffixLabel(cachedLabel, normalizedPackageName)) {
+            return cachedLabel
+        }
+
+        val launchLabel = getLaunchActivityLabel(normalizedPackageName)
+        if (!launchLabel.isNullOrBlank() && !isLikelySuffixLabel(launchLabel, normalizedPackageName)) {
+            return launchLabel
+        }
+
+        val appLabel = try {
+            val appInfo = packageManager.getApplicationInfo(normalizedPackageName, 0)
+            packageManager.getApplicationLabel(appInfo)?.toString()?.trim().orEmpty()
+        } catch (_: PackageManager.NameNotFoundException) {
+            ""
+        }
+
+        if (appLabel.isNotBlank() && !isLikelySuffixLabel(appLabel, normalizedPackageName)) {
+            return appLabel
+        }
+
+        if (cachedLabel.isNotBlank()) return cachedLabel
+        if (!launchLabel.isNullOrBlank()) return launchLabel
+        if (appLabel.isNotBlank()) return appLabel
+
+        return fallbackLabelFromPackage(normalizedPackageName)
+    }
+
+    private fun getLaunchActivityLabel(packageName: String): String? {
         return try {
-            val appInfo = packageManager.getApplicationInfo(packageName, 0)
-            packageManager.getApplicationLabel(appInfo).toString()
-        } catch (e: PackageManager.NameNotFoundException) {
-            // Return a cleaned-up package name as fallback
-            packageName.substringAfterLast(".")
-                .replaceFirstChar { it.uppercase() }
+            val launchIntent = packageManager.getLaunchIntentForPackage(packageName) ?: return null
+            val resolveInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.resolveActivity(launchIntent, PackageManager.ResolveInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.resolveActivity(launchIntent, 0)
+            }
+            resolveInfo?.loadLabel(packageManager)?.toString()?.trim()?.takeIf { it.isNotBlank() }
+        } catch (_: Exception) {
+            null
         }
     }
 
-    /**
-     * Gets the icon for a package.
-     * Note: Icons are loaded lazily in the UI layer for better performance.
-     *
-     * Some packages (especially in emulators) may be reported by UsageStats but
-     * not be queryable via PackageManager. This is normal and we return null in such cases.
-     *
-     * @param packageName Package name to look up
-     * @return Application icon drawable or null if package not found
-     */
     private fun getAppIcon(packageName: String): Drawable? {
+        val normalizedPackageName = normalizePackageName(packageName)
+
+        launcherAppCache[normalizedPackageName]?.icon?.let { cachedIcon ->
+            return cachedIcon
+        }
+
         return try {
-            packageManager.getApplicationIcon(packageName)
-        } catch (e: PackageManager.NameNotFoundException) {
-            // This is expected for some system packages or uninstalled apps
-            // that still show up in usage stats (especially in emulators)
-            Log.v(TAG, "Package $packageName not found for icon loading (may be system/virtual package)")
-            null
+            packageManager.getApplicationIcon(normalizedPackageName)
         } catch (e: Exception) {
-            Log.w(TAG, "Error loading icon for $packageName: ${e.message}")
             null
         }
     }
 
-    /**
-     * Gets the date string for a given number of days ago.
-     *
-     * @param daysAgo Number of days in the past (0 = today)
-     * @return Date string in yyyy-MM-dd format
-     */
+    private fun loadLauncherAppCache(): Map<String, LauncherAppEntry> {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val entries = mutableMapOf<String, LauncherAppEntry>()
+
+        return try {
+            val activities = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.queryIntentActivities(intent, 0)
+            }
+
+            activities.forEach { resolveInfo ->
+                val packageName = normalizePackageName(resolveInfo.activityInfo?.packageName ?: return@forEach)
+                if (packageName.isBlank()) return@forEach
+
+                val label = resolveInfo.loadLabel(packageManager)?.toString()?.trim()
+                    .takeUnless { it.isNullOrBlank() }
+                    ?: fallbackLabelFromPackage(packageName)
+
+                val icon = try {
+                    resolveInfo.loadIcon(packageManager)
+                } catch (_: Exception) {
+                    null
+                }
+
+                entries[packageName] = LauncherAppEntry(label = label, icon = icon)
+            }
+
+            entries
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to load launcher app cache", e)
+            emptyMap()
+        }
+    }
+
+    private fun isLikelySuffixLabel(label: String, packageName: String): Boolean {
+        val normalizedLabel = label.trim().lowercase(Locale.getDefault())
+        val suffix = packageName.substringAfterLast('.').lowercase(Locale.getDefault())
+        return normalizedLabel == suffix || normalizedLabel == suffix.replaceFirstChar { it.uppercase() }
+    }
+
+    private fun fallbackLabelFromPackage(packageName: String): String {
+        return packageName.substringAfterLast('.')
+            .replaceFirstChar { it.titlecase(Locale.getDefault()) }
+    }
+
+    private fun normalizePackageName(packageName: String): String {
+        return packageName.substringBefore(":").trim()
+    }
+
     fun getDateString(daysAgo: Int = 0): String {
         val calendar = Calendar.getInstance()
         if (daysAgo > 0) {
@@ -505,32 +468,14 @@ class UsageStatsHelper(private val context: Context) {
         return dateFormat.format(calendar.time)
     }
 
-    /**
-     * Gets a list of date strings for the last 7 days.
-     *
-     * @return List of date strings in yyyy-MM-dd format, most recent first
-     */
     fun getLast7DaysDates(): List<String> {
         return (0..6).map { getDateString(it) }
     }
 
-    /**
-     * Calculates total screen time from a list of app usage info.
-     * This is a utility method to ensure consistent calculation.
-     *
-     * @param usageList List of AppUsageInfo
-     * @return Total usage time in milliseconds
-     */
     fun calculateTotalScreenTime(usageList: List<AppUsageInfo>): Long {
         return usageList.sumOf { it.usageTimeMillis }
     }
 
-    /**
-     * Formats total screen time as a human-readable string.
-     *
-     * @param totalMillis Total time in milliseconds
-     * @return Formatted string like "3h 45m"
-     */
     fun formatScreenTime(totalMillis: Long): String {
         val hours = totalMillis / (1000 * 60 * 60)
         val minutes = (totalMillis / (1000 * 60)) % 60
@@ -542,4 +487,5 @@ class UsageStatsHelper(private val context: Context) {
         }
     }
 }
+
 

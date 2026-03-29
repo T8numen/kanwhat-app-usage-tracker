@@ -22,8 +22,8 @@ android {
         applicationId = "com.abhinavvaidya.appusagetracker"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 7
+        versionName = "1.5.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -52,19 +52,42 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
     }
+
+    applicationVariants.configureEach {
+        if (buildType.name == "debug") {
+            outputs.configureEach {
+                val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+                output.outputFileName = "app-debug-v${versionName}-${versionCode}.apk"
+            }
+        }
+    }
 }
 
+val archiveDebugApk by tasks.registering(Copy::class) {
+    from(layout.buildDirectory.dir("outputs/apk/debug"))
+    include("app-debug-v*.apk")
+    into(rootProject.layout.projectDirectory.dir("apk-history/debug"))
+}
+
+afterEvaluate {
+    tasks.named("assembleDebug") {
+        finalizedBy(archiveDebugApk)
+    }
+}
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -106,6 +129,7 @@ dependencies {
 
     // Material Components
     implementation(libs.material)
+    implementation(libs.androidx.appcompat)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

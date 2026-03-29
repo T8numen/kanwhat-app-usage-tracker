@@ -1,10 +1,8 @@
-package com.abhinavvaidya.appusagetracker.widget
+﻿package com.abhinavvaidya.appusagetracker.widget
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -12,17 +10,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.glance.GlanceId
-import androidx.glance.LocalContext
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
-import androidx.glance.appwidget.LinearProgressIndicator
-import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.LinearProgressIndicator
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -43,18 +41,18 @@ import androidx.glance.unit.ColorProvider
 import com.abhinavvaidya.appusagetracker.MainActivity
 import com.abhinavvaidya.appusagetracker.R
 import com.abhinavvaidya.appusagetracker.data.local.UsageRepository
-import com.abhinavvaidya.appusagetracker.data.local.WidgetCacheEntity
 import com.abhinavvaidya.appusagetracker.data.preferences.WidgetPreferencesRepository
 import com.abhinavvaidya.appusagetracker.data.preferences.WidgetTheme
+import com.abhinavvaidya.appusagetracker.util.DurationFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
- * Premium 2×2 App Widget using Jetpack Glance (Compose for widgets).
+ * Premium 2x2 App Widget using Jetpack Glance (Compose for widgets).
  *
  * FEATURES:
  * - Shows today's total screen time prominently
@@ -107,12 +105,16 @@ class UsageTrackerWidget : GlanceAppWidget() {
             if (cache != null) {
                 val icon = cache.topAppPackageName?.let { getAppIconBitmap(context, it) }
                 WidgetDisplayData(
-                    totalTimeFormatted = formatDuration(cache.totalScreenTimeMillis),
+                    totalTimeFormatted = DurationFormatter.formatCompact(context, cache.totalScreenTimeMillis),
                     totalTimeMillis = cache.totalScreenTimeMillis,
                     topAppName = if (showTopApp) cache.topAppName else null,
                     topAppIcon = if (showTopApp) icon else null,
-                    topAppUsageFormatted = if (showTopApp) formatDuration(cache.topAppUsageMillis) else null,
-                    lastUpdated = formatLastUpdated(cache.lastUpdatedTimestamp),
+                    topAppUsageFormatted = if (showTopApp) {
+                        DurationFormatter.formatCompact(context, cache.topAppUsageMillis)
+                    } else {
+                        null
+                    },
+                    lastUpdated = formatLastUpdated(context, cache.lastUpdatedTimestamp),
                     usageLevel = cache.usageLevel,
                     progressPercent = calculateProgress(cache.totalScreenTimeMillis, dailyGoal),
                     theme = theme,
@@ -120,12 +122,12 @@ class UsageTrackerWidget : GlanceAppWidget() {
                 )
             } else {
                 WidgetDisplayData(
-                    totalTimeFormatted = "0h 0m",
+                    totalTimeFormatted = DurationFormatter.formatCompact(context, 0L),
                     totalTimeMillis = 0L,
                     topAppName = null,
                     topAppIcon = null,
                     topAppUsageFormatted = null,
-                    lastUpdated = "Not yet updated",
+                    lastUpdated = context.getString(R.string.widget_not_updated_yet),
                     usageLevel = 0,
                     progressPercent = 0f,
                     theme = theme,
@@ -135,12 +137,12 @@ class UsageTrackerWidget : GlanceAppWidget() {
         } catch (e: Exception) {
             Log.e(TAG, "Error loading widget data", e)
             WidgetDisplayData(
-                totalTimeFormatted = "Error",
+                totalTimeFormatted = context.getString(R.string.widget_error),
                 totalTimeMillis = 0L,
                 topAppName = null,
                 topAppIcon = null,
                 topAppUsageFormatted = null,
-                lastUpdated = "Tap to refresh",
+                lastUpdated = context.getString(R.string.widget_tap_to_refresh),
                 usageLevel = 0,
                 progressPercent = 0f,
                 theme = WidgetTheme.DARK_MINIMAL,
@@ -174,19 +176,9 @@ class UsageTrackerWidget : GlanceAppWidget() {
         }
     }
 
-    private fun formatDuration(millis: Long): String {
-        val hours = millis / (1000 * 60 * 60)
-        val minutes = (millis / (1000 * 60)) % 60
-        return when {
-            hours > 0 -> "${hours}h ${minutes}m"
-            minutes > 0 -> "${minutes}m"
-            else -> "0m"
-        }
-    }
-
-    private fun formatLastUpdated(timestamp: Long): String {
+    private fun formatLastUpdated(context: Context, timestamp: Long): String {
         val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-        return "Updated ${sdf.format(Date(timestamp))}"
+        return context.getString(R.string.widget_updated_at, sdf.format(Date(timestamp)))
     }
 
     private fun calculateProgress(usageMillis: Long, goalMillis: Long): Float {
@@ -205,7 +197,7 @@ data class WidgetDisplayData(
     val topAppUsageFormatted: String?,
     val lastUpdated: String,
     val usageLevel: Int,           // 0=Low(green), 1=Medium(yellow), 2=High(red)
-    val progressPercent: Float,     // 0.0 to 1.0
+    val progressPercent: Float,    // 0.0 to 1.0
     val theme: WidgetTheme,
     val hasData: Boolean
 )
@@ -243,7 +235,7 @@ private fun WidgetContent(data: WidgetDisplayData) {
 
             // Label
             Text(
-                text = "Screen Time",
+                text = context.getString(R.string.widget_screen_time),
                 style = TextStyle(
                     color = colors.subtitle,
                     fontSize = 11.sp,

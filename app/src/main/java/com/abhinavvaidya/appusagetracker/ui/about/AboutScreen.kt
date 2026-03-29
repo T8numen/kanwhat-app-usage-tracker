@@ -1,4 +1,4 @@
-package com.abhinavvaidya.appusagetracker.ui.about
+﻿package com.abhinavvaidya.appusagetracker.ui.about
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -30,10 +30,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.abhinavvaidya.appusagetracker.BuildConfig
+import com.abhinavvaidya.appusagetracker.R
 import com.abhinavvaidya.appusagetracker.ui.theme.AccentPrimary
 import com.abhinavvaidya.appusagetracker.ui.theme.CardBackground
 import com.abhinavvaidya.appusagetracker.ui.theme.DarkBackground
@@ -69,7 +70,7 @@ fun AboutScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(id = R.string.about_back),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
@@ -77,7 +78,7 @@ fun AboutScreen(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "About",
+                text = stringResource(id = R.string.about_title),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -111,7 +112,7 @@ fun AboutScreen(
 
         // App Name
         Text(
-            text = context.getString(com.abhinavvaidya.appusagetracker.R.string.app_name),
+            text = stringResource(id = R.string.app_name),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -129,9 +130,13 @@ fun AboutScreen(
                 @Suppress("DEPRECATION")
                 packageInfo.versionCode.toLong()
             }
-            "Version ${packageInfo.versionName} ($versionCode)"
+            context.getString(
+                R.string.about_version_format,
+                packageInfo.versionName,
+                versionCode
+            )
         } catch (_: Exception) {
-            "Version 1.0"
+            stringResource(id = R.string.about_version_fallback)
         }
 
         Text(
@@ -145,16 +150,16 @@ fun AboutScreen(
 
         // Description Card
         InfoCard(
-            title = "About",
-            content = "Helps users understand and manage their app usage efficiently."
+            title = stringResource(id = R.string.about_description_title),
+            content = stringResource(id = R.string.about_description_content)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Developer Card
         InfoCard(
-            title = "Developer",
-            content = "Developed by Abhinav Vaidya"
+            title = stringResource(id = R.string.about_developer_title),
+            content = stringResource(id = R.string.about_developer_content)
         )
 
         Spacer(modifier = Modifier.height(100.dp))
@@ -195,4 +200,3 @@ private fun InfoCard(
         }
     }
 }
-

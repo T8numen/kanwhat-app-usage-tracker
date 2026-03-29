@@ -17,6 +17,7 @@ datastore = "1.1.1"
 glance = "1.1.0"
 coreSplashscreen = "1.0.1"
 material = "1.12.0"
+appcompat = "1.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -47,6 +48,7 @@ androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidge
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -5,20 +5,34 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.abhinavvaidya.appusagetracker.data.local.UsageRepository
+import com.abhinavvaidya.appusagetracker.data.preferences.WidgetPreferencesRepository
 import com.abhinavvaidya.appusagetracker.domain.model.AppUsageInfo
-import com.abhinavvaidya.appusagetracker.domain.model.DailyUsageSummary
+import com.abhinavvaidya.appusagetracker.util.DurationFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Locale
+
+data class WeeklyDayUsage(
+    val date: String,
+    val displayDate: String,
+    val totalTimeMillis: Long,
+    val apps: List<AppUsageInfo>
+)
 
 data class WeeklyUiState(
     val isLoading: Boolean = false,
-    val dailySummaries: List<DailyUsageSummary> = emptyList(),
+    val dayUsages: List<WeeklyDayUsage> = emptyList(),
     val topApps: List<AppUsageInfo> = emptyList(),
-    val totalWeeklyTime: String = "0h 0m",
+    val totalWeeklyTime: String = "",
+    val averageDailyTimeMillis: Long = 0L,
+    val rangeStartDate: String = "",
+    val rangeEndDate: String = "",
+    val backgroundImageUri: String? = null,
     val error: String? = null
 )
 
@@ -29,24 +43,23 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private val repository = UsageRepository(application)
+    private val preferencesRepository = WidgetPreferencesRepository(application)
 
-    private val _uiState = MutableStateFlow(WeeklyUiState())
+    private val _uiState = MutableStateFlow(
+        WeeklyUiState(totalWeeklyTime = DurationFormatter.formatCompact(application, 0L))
+    )
     val uiState: StateFlow<WeeklyUiState> = _uiState.asStateFlow()
 
     init {
-        Log.d(TAG, "WeeklyViewModel initialized")
         loadWeeklyUsage()
     }
 
     fun loadWeeklyUsage() {
         viewModelScope.launch {
-            Log.d(TAG, "Loading weekly usage...")
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                // Check permission first
                 if (!repository.hasUsagePermission()) {
-                    Log.w(TAG, "No usage permission")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = "Usage access permission required"
@@ -54,58 +67,76 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
                     return@launch
                 }
 
-                withContext(Dispatchers.IO) {
-                    repository.refreshWeeklyUsage()
-                }
+                val weeklyData = withContext(Dispatchers.IO) {
+                    val displayFormat = SimpleDateFormat("MM/dd", Locale.getDefault())
 
-                repository.getWeeklyUsageFlow().collect { summaries ->
-                    Log.d(TAG, "Received ${summaries.size} daily summaries")
+                    val dayUsages = (6 downTo 0).map { daysAgo ->
+                        val date = repository.getDateString(daysAgo)
+                        val apps = repository.getUsageForDateDirect(daysAgo)
+                        val total = apps.sumOf { it.usageTimeMillis }
 
-                    // Log icons for each summary
-                    summaries.forEach { summary ->
-                        Log.d(TAG, "Date ${summary.date}: ${summary.apps.size} apps")
-                        summary.apps.forEach { app ->
-                            Log.v(TAG, "  ${app.appName}: icon=${app.appIcon != null}")
+                        val displayDate = try {
+                            val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(date)
+                            if (parsed != null) displayFormat.format(parsed) else date
+                        } catch (_: Exception) {
+                            date
                         }
+
+                        WeeklyDayUsage(
+                            date = date,
+                            displayDate = displayDate,
+                            totalTimeMillis = total,
+                            apps = apps
+                        )
                     }
 
-                    val totalMillis = summaries.sumOf { it.totalTimeMillis }
-                    val hours = totalMillis / (1000 * 60 * 60)
-                    val minutes = (totalMillis / (1000 * 60)) % 60
-
-                    Log.d(TAG, "Total weekly time: ${hours}h ${minutes}m")
-
-                    // Aggregate top apps across all days
-                    val appUsageMap = mutableMapOf<String, AppUsageInfo>()
-                    summaries.flatMap { it.apps }.forEach { app ->
-                        val existing = appUsageMap[app.packageName]
-                        if (existing != null) {
-                            // Preserve appIcon and other fields when aggregating
-                            appUsageMap[app.packageName] = existing.copy(
+                    val appAggregate = linkedMapOf<String, AppUsageInfo>()
+                    dayUsages.flatMap { it.apps }.forEach { app ->
+                        val existing = appAggregate[app.packageName]
+                        if (existing == null) {
+                            appAggregate[app.packageName] = app
+                        } else {
+                            appAggregate[app.packageName] = existing.copy(
                                 usageTimeMillis = existing.usageTimeMillis + app.usageTimeMillis,
+                                launchCount = existing.launchCount + app.launchCount,
                                 appIcon = existing.appIcon ?: app.appIcon
                             )
-                        } else {
-                            appUsageMap[app.packageName] = app
                         }
                     }
 
-                    val topApps = appUsageMap.values
-                        .sortedByDescending { it.usageTimeMillis }
-                        .take(5)
-
-                    Log.d(TAG, "Top ${topApps.size} apps:")
-                    topApps.forEach { app ->
-                        Log.d(TAG, "  ${app.appName}: ${app.usageTimeMillis / 1000 / 60}m, icon=${app.appIcon != null}")
+                    val sortedApps = appAggregate.values.sortedByDescending { it.usageTimeMillis }
+                    val totalAppMillis = sortedApps.sumOf { it.usageTimeMillis }.coerceAtLeast(1L)
+                    val topApps = sortedApps.take(30).mapIndexed { index, app ->
+                        app.copy(
+                            usagePercentage = (app.usageTimeMillis.toFloat() / totalAppMillis.toFloat()) * 100f,
+                            rank = index + 1
+                        )
                     }
 
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        dailySummaries = summaries,
-                        topApps = topApps.toList(),
-                        totalWeeklyTime = "${hours}h ${minutes}m"
+                    val totalWeeklyMillis = dayUsages.sumOf { it.totalTimeMillis }
+                    val averageDailyMillis = if (dayUsages.isEmpty()) 0L else totalWeeklyMillis / dayUsages.size
+
+                    val backgroundUri = preferencesRepository.getBackgroundImageUri()
+
+                    Triple(
+                        WeeklyUiState(
+                            isLoading = false,
+                            dayUsages = dayUsages,
+                            topApps = topApps,
+                            totalWeeklyTime = DurationFormatter.formatCompact(getApplication(), totalWeeklyMillis),
+                            averageDailyTimeMillis = averageDailyMillis,
+                            rangeStartDate = dayUsages.firstOrNull()?.date.orEmpty(),
+                            rangeEndDate = dayUsages.lastOrNull()?.date.orEmpty(),
+                            backgroundImageUri = backgroundUri,
+                            error = null
+                        ),
+                        dayUsages.size,
+                        topApps.size
                     )
                 }
+
+                _uiState.value = weeklyData.first
+                Log.d(TAG, "Loaded weekly data days=${weeklyData.second}, apps=${weeklyData.third}")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load weekly data", e)
                 _uiState.value = _uiState.value.copy(
@@ -116,12 +147,7 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    /**
-     * Called when app resumes to automatically refresh data
-     */
     fun onResume() {
-        Log.d(TAG, "onResume called")
         loadWeeklyUsage()
     }
 }
-

@@ -17,10 +17,12 @@ interface AppUsageDao {
     @Query("SELECT * FROM app_usage WHERE date = :date ORDER BY usageTimeMillis DESC")
     fun getUsageForDate(date: String): Flow<List<AppUsageEntity>>
 
+    @Query("SELECT * FROM app_usage WHERE date = :date ORDER BY usageTimeMillis DESC")
+    suspend fun getUsageForDateOnce(date: String): List<AppUsageEntity>
+
     @Query("SELECT * FROM app_usage WHERE date IN (:dates) ORDER BY date DESC, usageTimeMillis DESC")
     fun getUsageForDates(dates: List<String>): Flow<List<AppUsageEntity>>
 
     @Query("DELETE FROM app_usage WHERE date = :date")
     suspend fun deleteUsageForDate(date: String)
 }
-

@@ -8,6 +8,7 @@ data class AppUsageInfo(
     val usageTimeMillis: Long,
     val appIcon: Drawable? = null,
     val usagePercentage: Float = 0f,
+    val launchCount: Int = 0,
     val rank: Int = 0
 ) {
     val formattedTime: String
@@ -25,4 +26,3 @@ data class AppUsageInfo(
     val formattedPercentage: String
         get() = String.format("%.1f%%", usagePercentage)
 }
-

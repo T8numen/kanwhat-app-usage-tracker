@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
     Widget preview layout for widget picker.
     Shows a sample of what the widget looks like before adding.
@@ -25,7 +25,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="2h 30m"
+                android:text="@string/widget_preview_time"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -36,7 +36,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Screen Time"
+            android:text="@string/widget_screen_time"
             android:textColor="@color/widget_text_secondary"
             android:textSize="11sp" />
 
@@ -44,11 +44,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Today"
+            android:text="@string/widget_today"
             android:textColor="@color/widget_text_tertiary"
             android:textSize="9sp" />
 
     </LinearLayout>
 
 </FrameLayout>
+
 

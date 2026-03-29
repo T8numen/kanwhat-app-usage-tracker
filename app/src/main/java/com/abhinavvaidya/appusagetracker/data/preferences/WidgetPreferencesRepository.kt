@@ -1,4 +1,4 @@
-package com.abhinavvaidya.appusagetracker.data.preferences
+﻿package com.abhinavvaidya.appusagetracker.data.preferences
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -6,115 +6,140 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-// Extension property for DataStore
 private val Context.widgetDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "widget_preferences"
 )
 
-/**
- * Widget theme options - Premium quality themes
- */
 enum class WidgetTheme(val displayName: String, val description: String) {
     DARK_MINIMAL("Dark Minimal", "Clean, dark theme with subtle accents"),
     NEON_CYBER("Neon Cyber", "Vibrant neon colors with cyber aesthetic"),
     SOFT_PASTEL("Soft Pastel", "Calm, pastel colors for relaxed viewing")
 }
 
-/**
- * Repository for widget preferences using DataStore.
- *
- * DESIGN DECISIONS:
- * - Uses DataStore instead of SharedPreferences for type safety and async support
- * - Stores theme per widget ID for multi-widget support
- * - Includes daily usage goal for gamification
- */
+enum class AppListMetric {
+    USAGE_TIME,
+    LAUNCH_COUNT,
+    USAGE_PERCENTAGE
+}
+
 class WidgetPreferencesRepository(private val context: Context) {
 
     companion object {
-        // Preference keys
         private val WIDGET_THEME_KEY = intPreferencesKey("widget_theme")
         private val DAILY_USAGE_GOAL_KEY = longPreferencesKey("daily_usage_goal")
-        private val SHOW_TOP_APP_KEY = intPreferencesKey("show_top_app") // 1 = true, 0 = false
+        private val SHOW_TOP_APP_KEY = intPreferencesKey("show_top_app")
+        private val EXCLUDE_SYSTEM_APPS_KEY = intPreferencesKey("exclude_system_apps")
+        private val EXCLUDED_PACKAGES_KEY = stringSetPreferencesKey("excluded_packages")
+        private val APP_LIST_METRIC_KEY = intPreferencesKey("app_list_metric")
+        private val BACKGROUND_IMAGE_URI_KEY = stringPreferencesKey("background_image_uri")
 
-        // Default values
-        private const val DEFAULT_DAILY_GOAL_MS = 4 * 60 * 60 * 1000L // 4 hours
+        private const val DEFAULT_DAILY_GOAL_MS = 4 * 60 * 60 * 1000L
     }
 
     private val dataStore = context.widgetDataStore
 
-    /**
-     * Gets the current widget theme preference.
-     */
     val widgetThemeFlow: Flow<WidgetTheme> = dataStore.data.map { preferences ->
         val themeOrdinal = preferences[WIDGET_THEME_KEY] ?: WidgetTheme.DARK_MINIMAL.ordinal
         WidgetTheme.entries.getOrElse(themeOrdinal) { WidgetTheme.DARK_MINIMAL }
     }
 
-    /**
-     * Gets the daily usage goal in milliseconds.
-     */
     val dailyUsageGoalFlow: Flow<Long> = dataStore.data.map { preferences ->
         preferences[DAILY_USAGE_GOAL_KEY] ?: DEFAULT_DAILY_GOAL_MS
     }
 
-    /**
-     * Gets whether to show the top app in the widget.
-     */
     val showTopAppFlow: Flow<Boolean> = dataStore.data.map { preferences ->
         (preferences[SHOW_TOP_APP_KEY] ?: 1) == 1
     }
 
-    /**
-     * Gets the current theme synchronously (for widget provider).
-     */
-    suspend fun getWidgetTheme(): WidgetTheme {
-        return widgetThemeFlow.first()
+    val excludeSystemAppsFlow: Flow<Boolean> = dataStore.data.map { preferences ->
+        (preferences[EXCLUDE_SYSTEM_APPS_KEY] ?: 1) == 1
     }
 
-    /**
-     * Gets the daily usage goal synchronously.
-     */
-    suspend fun getDailyUsageGoal(): Long {
-        return dailyUsageGoalFlow.first()
+    val excludedPackagesFlow: Flow<Set<String>> = dataStore.data.map { preferences ->
+        (preferences[EXCLUDED_PACKAGES_KEY] ?: emptySet())
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .toSortedSet()
     }
 
-    /**
-     * Gets show top app preference synchronously.
-     */
-    suspend fun getShowTopApp(): Boolean {
-        return showTopAppFlow.first()
+    val appListMetricFlow: Flow<AppListMetric> = dataStore.data.map { preferences ->
+        val metricOrdinal = preferences[APP_LIST_METRIC_KEY] ?: AppListMetric.USAGE_TIME.ordinal
+        AppListMetric.entries.getOrElse(metricOrdinal) { AppListMetric.USAGE_TIME }
     }
 
-    /**
-     * Sets the widget theme preference.
-     */
+    val backgroundImageUriFlow: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[BACKGROUND_IMAGE_URI_KEY]?.takeIf { it.isNotBlank() }
+    }
+
+    suspend fun getWidgetTheme(): WidgetTheme = widgetThemeFlow.first()
+
+    suspend fun getDailyUsageGoal(): Long = dailyUsageGoalFlow.first()
+
+    suspend fun getShowTopApp(): Boolean = showTopAppFlow.first()
+
+    suspend fun getExcludeSystemApps(): Boolean = excludeSystemAppsFlow.first()
+
+    suspend fun getExcludedPackages(): Set<String> = excludedPackagesFlow.first()
+
+    suspend fun getAppListMetric(): AppListMetric = appListMetricFlow.first()
+
+    suspend fun getBackgroundImageUri(): String? = backgroundImageUriFlow.first()
+
     suspend fun setWidgetTheme(theme: WidgetTheme) {
         dataStore.edit { preferences ->
             preferences[WIDGET_THEME_KEY] = theme.ordinal
         }
     }
 
-    /**
-     * Sets the daily usage goal in milliseconds.
-     */
     suspend fun setDailyUsageGoal(goalMs: Long) {
         dataStore.edit { preferences ->
             preferences[DAILY_USAGE_GOAL_KEY] = goalMs
         }
     }
 
-    /**
-     * Sets whether to show the top app in the widget.
-     */
     suspend fun setShowTopApp(show: Boolean) {
         dataStore.edit { preferences ->
             preferences[SHOW_TOP_APP_KEY] = if (show) 1 else 0
         }
     }
-}
 
+    suspend fun setExcludeSystemApps(exclude: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[EXCLUDE_SYSTEM_APPS_KEY] = if (exclude) 1 else 0
+        }
+    }
+
+    suspend fun setExcludedPackages(packages: Set<String>) {
+        val normalized = packages
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .toSortedSet()
+
+        dataStore.edit { preferences ->
+            preferences[EXCLUDED_PACKAGES_KEY] = normalized
+        }
+    }
+
+    suspend fun setAppListMetric(metric: AppListMetric) {
+        dataStore.edit { preferences ->
+            preferences[APP_LIST_METRIC_KEY] = metric.ordinal
+        }
+    }
+
+    suspend fun setBackgroundImageUri(uri: String?) {
+        dataStore.edit { preferences ->
+            if (uri.isNullOrBlank()) {
+                preferences.remove(BACKGROUND_IMAGE_URI_KEY)
+            } else {
+                preferences[BACKGROUND_IMAGE_URI_KEY] = uri
+            }
+        }
+    }
+}

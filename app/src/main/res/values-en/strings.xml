@@ -1,0 +1,149 @@
+<resources>
+    <string name="app_name">KanWhat</string>
+
+    <string name="nav_today">Today</string>
+    <string name="nav_weekly">Weekly</string>
+    <string name="nav_widget">Settings</string>
+
+    <string name="content_desc_selected">Selected</string>
+
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="duration_minutes">%1$dm</string>
+    <string name="duration_seconds">%1$ds</string>
+    <string name="duration_zero">0m</string>
+
+    <plurals name="goal_hours">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+
+    <string name="home_today_screen_time">Today Screen Time</string>
+    <string name="home_app_usage_section">App Usage Ranking</string>
+    <string name="home_usage_insights">Usage Insights</string>
+    <string name="home_no_usage_data">No usage data yet</string>
+    <string name="home_start_using_apps">Use your apps and come back later to see stats.</string>
+    <string name="home_brand_subtitle">Visualize and balance your daily screen habits.</string>
+    <string name="home_version_format">Version %1$s</string>
+    <string name="home_date_pattern">EEEE, MMM d</string>
+    <string name="home_previous_day">Previous day</string>
+    <string name="home_next_day">Next day</string>
+    <string name="home_stat_fragment">Fragmentation</string>
+    <string name="home_stat_duration">Usage Time</string>
+    <string name="home_stat_launch">Launches</string>
+    <string name="home_stat_unlock">Unlocks</string>
+    <string name="home_stat_notification">Notifications</string>
+
+    <string name="weekly_card_title">Weekly Screen Time</string>
+    <string name="weekly_daily_breakdown">Daily Breakdown</string>
+    <string name="weekly_top_apps_section">Top Apps This Week</string>
+    <string name="weekly_report_title">Weekly Report</string>
+    <string name="weekly_report_subtitle">Last 7 days overview</string>
+    <string name="weekly_7day_title">7-Day Usage Time</string>
+    <string name="weekly_total_legend">Total this week %1$s</string>
+    <string name="weekly_usage_duration_label">Usage Time</string>
+
+    <string name="usage_desc_light">Light usage</string>
+    <string name="usage_desc_moderate">Moderate usage</string>
+    <string name="usage_desc_heavy">Heavy usage</string>
+    <string name="usage_desc_very_heavy">Very heavy usage</string>
+
+    <string name="permission_title">Usage Access Required</string>
+    <string name="permission_description">To show app usage stats, we need usage access permission. Your privacy stays local.</string>
+    <string name="permission_local_storage_title">Local Storage Only</string>
+    <string name="permission_local_storage_desc">All data stays on your device</string>
+    <string name="permission_no_cloud_title">No Cloud Sync</string>
+    <string name="permission_no_cloud_desc">No data is collected or shared</string>
+    <string name="permission_offline_title">Offline First</string>
+    <string name="permission_offline_desc">Works fully without internet</string>
+    <string name="permission_grant">Grant Permission</string>
+    <string name="permission_hint_find_app">Find "KanWhat" in the list and enable access</string>
+
+    <string name="settings_widget_theme_title">Visual Theme</string>
+    <string name="settings_daily_goal_title">Daily Usage Goal</string>
+    <string name="settings_daily_goal_desc">The progress ring fills as you approach this goal.</string>
+    <string name="settings_show_top_app_title">Show Top App</string>
+    <string name="settings_show_top_app_desc">Show your most used app in the widget.</string>
+    <string name="settings_header_title">Settings</string>
+    <string name="settings_header_subtitle">Personalize your usage dashboard</string>
+    <string name="settings_about_title">About</string>
+    <string name="settings_about_desc">App information and credits</string>
+    <string name="settings_battery_title">Battery Optimization</string>
+    <string name="settings_battery_desc">The widget updates every 30-60 minutes to save battery. Tap the widget to view latest data in-app.</string>
+    <string name="settings_filter_title">App Filters</string>
+    <string name="settings_filter_desc">Filter which apps appear in stats and widget data.</string>
+    <string name="settings_exclude_system_title">Exclude System Apps</string>
+    <string name="settings_exclude_system_desc">When enabled, preinstalled system apps are hidden from rankings.</string>
+    <string name="settings_excluded_packages_title">Custom Excluded Packages</string>
+    <string name="settings_excluded_packages_desc">Batch edit supported: one package per line, or comma-separated. Format is validated on save.</string>
+    <string name="settings_excluded_packages_placeholder">Example:
+com.tencent.mm
+com.taobao.taobao</string>
+    <string name="settings_excluded_packages_count">Saved packages: %1$d</string>
+    <string name="settings_save_excluded_packages">Save Exclusion List</string>
+    <string name="settings_package_validation_error">Invalid package format: %1$s</string>
+    <string name="settings_excluded_packages_empty">No custom excluded packages yet</string>
+
+    <string name="settings_list_metric_title">Right-Side Metric</string>
+    <string name="settings_list_metric_desc">Choose what appears on the right side of each app row.</string>
+    <string name="settings_list_metric_usage_time">Usage Time</string>
+    <string name="settings_list_metric_launch_count">Launch Count</string>
+    <string name="settings_list_metric_usage_percentage">Usage Share</string>
+
+    <string name="list_metric_usage_time">Time</string>
+    <string name="list_metric_launch_count">Launches</string>
+    <string name="list_metric_usage_percentage">Share</string>
+    <string name="list_metric_launch_value">%1$d launches</string>
+    <string name="list_metric_percentage_value">%1$.1f%%</string>
+
+    <string name="settings_language_title">App Language</string>
+    <string name="settings_theme_preview_time">2h</string>
+    <string name="language_chinese">Chinese</string>
+    <string name="language_english">English</string>
+
+    <string name="settings_background_title">Custom Background Image</string>
+    <string name="settings_background_desc">Set a background image for Home and the 7-day screen.</string>
+    <string name="settings_background_none">No custom background selected</string>
+    <string name="settings_background_not_set">Using default background</string>
+    <string name="settings_background_set">Custom background is active</string>
+    <string name="settings_pick_background">Choose Image</string>
+    <string name="settings_clear_background">Clear Image</string>
+
+    <string name="theme_dark_minimal_name">Dark Minimal</string>
+    <string name="theme_neon_cyber_name">Neon Cyber</string>
+    <string name="theme_soft_pastel_name">Soft Pastel</string>
+    <string name="theme_dark_short">Dark</string>
+    <string name="theme_neon_short">Neon</string>
+    <string name="theme_pastel_short">Pastel</string>
+
+    <string name="about_title">About</string>
+    <string name="about_back">Back</string>
+    <string name="about_version_format">Version %1$s (%2$d)</string>
+    <string name="about_version_fallback">Version 1.0</string>
+    <string name="about_description_title">About</string>
+    <string name="about_description_content">Helps you understand and manage app usage efficiently.</string>
+    <string name="about_developer_title">Developer</string>
+    <string name="about_developer_content">Developed by Abhinav Vaidya</string>
+
+    <string name="widget_name">KanWhat Widget</string>
+    <string name="widget_description">Shows total screen time today with gamified progress tracking</string>
+    <string name="widget_loading">Loading...</string>
+    <string name="widget_no_data">No data yet</string>
+    <string name="widget_screen_time">Screen Time</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_tap_to_open">Tap to open app</string>
+    <string name="widget_tap_to_refresh">Tap to refresh</string>
+    <string name="widget_not_updated_yet">Not updated yet</string>
+    <string name="widget_error">Error</string>
+    <string name="widget_updated_at">Updated at %1$s</string>
+    <string name="widget_preview_time">2h 30m</string>
+
+    <string name="widget_settings_title">Widget Settings</string>
+    <string name="widget_theme_title">Widget Theme</string>
+    <string name="widget_theme_dark">Dark Minimal</string>
+    <string name="widget_theme_neon">Neon Cyber</string>
+    <string name="widget_theme_pastel">Soft Pastel</string>
+    <string name="widget_show_top_app">Show Top App</string>
+    <string name="widget_daily_goal">Daily Usage Goal</string>
+</resources>
+

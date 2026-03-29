@@ -1,4 +1,4 @@
-package com.abhinavvaidya.appusagetracker.ui.permission
+﻿package com.abhinavvaidya.appusagetracker.ui.permission
 
 import android.content.Intent
 import android.provider.Settings
@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,14 +31,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.abhinavvaidya.appusagetracker.R
 import com.abhinavvaidya.appusagetracker.ui.theme.AccentPrimary
 import com.abhinavvaidya.appusagetracker.ui.theme.AccentSuccess
 import com.abhinavvaidya.appusagetracker.ui.theme.GradientCyan
@@ -102,7 +104,7 @@ fun PermissionScreen(
             Spacer(modifier = Modifier.height(36.dp))
 
             Text(
-                text = "Usage Access Required",
+                text = stringResource(id = R.string.permission_title),
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
@@ -113,7 +115,7 @@ fun PermissionScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "To show your app usage statistics, we need permission to access usage data. Your privacy is our priority.",
+                text = stringResource(id = R.string.permission_description),
                 style = MaterialTheme.typography.bodyLarge,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
@@ -129,18 +131,18 @@ fun PermissionScreen(
             ) {
                 FeatureCard(
                     icon = Icons.Filled.Star,
-                    title = "Local Storage Only",
-                    description = "All data stays on your device"
+                    title = stringResource(id = R.string.permission_local_storage_title),
+                    description = stringResource(id = R.string.permission_local_storage_desc)
                 )
                 FeatureCard(
                     icon = Icons.Filled.Close,
-                    title = "No Cloud Sync",
-                    description = "No data is collected or shared"
+                    title = stringResource(id = R.string.permission_no_cloud_title),
+                    description = stringResource(id = R.string.permission_no_cloud_desc)
                 )
                 FeatureCard(
                     icon = Icons.Filled.Check,
-                    title = "Offline First",
-                    description = "Works completely without internet"
+                    title = stringResource(id = R.string.permission_offline_title),
+                    description = stringResource(id = R.string.permission_offline_desc)
                 )
             }
 
@@ -149,6 +151,7 @@ fun PermissionScreen(
             // Gradient button
             Button(
                 onClick = {
+                    onPermissionGranted()
                     val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
                     context.startActivity(intent)
                 },
@@ -159,7 +162,7 @@ fun PermissionScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent
                 ),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                contentPadding = PaddingValues(0.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -173,7 +176,7 @@ fun PermissionScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Grant Permission",
+                        text = stringResource(id = R.string.permission_grant),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold
                         ),
@@ -185,7 +188,7 @@ fun PermissionScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Find \"AppUsageTracker\" in the list and enable access",
+                text = stringResource(id = R.string.permission_hint_find_app),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary,
                 textAlign = TextAlign.Center
@@ -244,4 +247,3 @@ private fun FeatureCard(
         }
     }
 }
-

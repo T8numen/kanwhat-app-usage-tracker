@@ -1,21 +1,149 @@
 <resources>
-    <string name="app_name">App Usage Tracker</string>
+    <string name="app_name">看什么</string>
 
-    <!-- Widget strings -->
-    <string name="widget_name">Screen Time Widget</string>
-    <string name="widget_description">Shows today\'s total screen time with gamified progress tracking</string>
-    <string name="widget_loading">Loading…</string>
-    <string name="widget_no_data">No data yet</string>
-    <string name="widget_screen_time">Screen Time</string>
-    <string name="widget_today">Today</string>
-    <string name="widget_tap_to_open">Tap to open app</string>
+    <string name="nav_today">今日</string>
+    <string name="nav_weekly">周报</string>
+    <string name="nav_widget">设置</string>
 
-    <!-- Widget settings strings -->
-    <string name="widget_settings_title">Widget Settings</string>
-    <string name="widget_theme_title">Widget Theme</string>
-    <string name="widget_theme_dark">Dark Minimal</string>
-    <string name="widget_theme_neon">Neon Cyber</string>
-    <string name="widget_theme_pastel">Soft Pastel</string>
-    <string name="widget_show_top_app">Show Top App</string>
-    <string name="widget_daily_goal">Daily Usage Goal</string>
+    <string name="content_desc_selected">已选中</string>
+
+    <string name="duration_hours_minutes">%1$d小时 %2$d分钟</string>
+    <string name="duration_minutes_seconds">%1$d分钟 %2$d秒</string>
+    <string name="duration_minutes">%1$d分钟</string>
+    <string name="duration_seconds">%1$d秒</string>
+    <string name="duration_zero">0分钟</string>
+
+    <plurals name="goal_hours">
+        <item quantity="one">%d 小时</item>
+        <item quantity="other">%d 小时</item>
+    </plurals>
+
+    <string name="home_today_screen_time">今日屏幕时间</string>
+    <string name="home_app_usage_section">应用使用排行</string>
+    <string name="home_usage_insights">使用洞察</string>
+    <string name="home_no_usage_data">暂无使用数据</string>
+    <string name="home_start_using_apps">开始使用应用后，稍后回来即可查看统计。</string>
+    <string name="home_brand_subtitle">可视化你的每日屏幕习惯并保持平衡。</string>
+    <string name="home_version_format">版本 %1$s</string>
+    <string name="home_date_pattern">EEEE, M月d日</string>
+    <string name="home_previous_day">上一天</string>
+    <string name="home_next_day">下一天</string>
+    <string name="home_stat_fragment">时间碎片</string>
+    <string name="home_stat_duration">使用时长</string>
+    <string name="home_stat_launch">启动次数</string>
+    <string name="home_stat_unlock">解锁次数</string>
+    <string name="home_stat_notification">通知次数</string>
+
+    <string name="weekly_card_title">本周屏幕时间</string>
+    <string name="weekly_daily_breakdown">每日明细</string>
+    <string name="weekly_top_apps_section">本周高频应用</string>
+    <string name="weekly_report_title">周度报告</string>
+    <string name="weekly_report_subtitle">最近 7 天概览</string>
+    <string name="weekly_7day_title">7天 使用时长</string>
+    <string name="weekly_total_legend">本周总计 %1$s</string>
+    <string name="weekly_usage_duration_label">使用时长</string>
+
+    <string name="usage_desc_light">轻度使用</string>
+    <string name="usage_desc_moderate">中度使用</string>
+    <string name="usage_desc_heavy">重度使用</string>
+    <string name="usage_desc_very_heavy">非常重度使用</string>
+
+    <string name="permission_title">需要使用记录权限</string>
+    <string name="permission_description">为了展示应用使用统计，我们需要读取使用记录权限。你的隐私始终优先。</string>
+    <string name="permission_local_storage_title">仅本地存储</string>
+    <string name="permission_local_storage_desc">所有数据都保存在你的设备中</string>
+    <string name="permission_no_cloud_title">无云端同步</string>
+    <string name="permission_no_cloud_desc">不会收集或共享你的数据</string>
+    <string name="permission_offline_title">离线优先</string>
+    <string name="permission_offline_desc">无需联网即可完整使用</string>
+    <string name="permission_grant">去授权</string>
+    <string name="permission_hint_find_app">在列表中找到“看什么”并开启权限</string>
+
+    <string name="settings_widget_theme_title">视觉主题</string>
+    <string name="settings_daily_goal_title">每日使用目标</string>
+    <string name="settings_daily_goal_desc">随着接近目标，进度环会逐步填充</string>
+    <string name="settings_show_top_app_title">显示最常用应用</string>
+    <string name="settings_show_top_app_desc">在小组件中显示你使用最多的应用</string>
+    <string name="settings_header_title">设置</string>
+    <string name="settings_header_subtitle">个性化你的使用统计界面</string>
+    <string name="settings_about_title">关于</string>
+    <string name="settings_about_desc">应用信息与鸣谢</string>
+    <string name="settings_battery_title">电量优化提示</string>
+    <string name="settings_battery_desc">为节省电量，小组件每 30-60 分钟更新一次。点击小组件可在应用内查看最新数据。</string>
+    <string name="settings_filter_title">应用过滤</string>
+    <string name="settings_filter_desc">用于过滤统计列表与小组件中的应用项目</string>
+    <string name="settings_exclude_system_title">排除系统应用</string>
+    <string name="settings_exclude_system_desc">开启后会隐藏系统预装应用，只显示常用用户应用</string>
+    <string name="settings_excluded_packages_title">自定义排除包名</string>
+    <string name="settings_excluded_packages_desc">支持批量编辑：每行一个包名，也可用逗号分隔。保存时会自动校验格式。</string>
+    <string name="settings_excluded_packages_placeholder">示例：
+com.tencent.mm
+com.taobao.taobao</string>
+    <string name="settings_excluded_packages_count">已保存 %1$d 个包名</string>
+    <string name="settings_save_excluded_packages">保存排除列表</string>
+    <string name="settings_package_validation_error">以下包名格式无效：%1$s</string>
+    <string name="settings_excluded_packages_empty">当前没有自定义排除包名</string>
+
+    <string name="settings_list_metric_title">列表右侧显示</string>
+    <string name="settings_list_metric_desc">选择应用列表右侧显示的统计指标。</string>
+    <string name="settings_list_metric_usage_time">使用时间</string>
+    <string name="settings_list_metric_launch_count">启动次数</string>
+    <string name="settings_list_metric_usage_percentage">使用时长占比</string>
+
+    <string name="list_metric_usage_time">时长</string>
+    <string name="list_metric_launch_count">启动</string>
+    <string name="list_metric_usage_percentage">占比</string>
+    <string name="list_metric_launch_value">%1$d次</string>
+    <string name="list_metric_percentage_value">%1$.1f%%</string>
+
+    <string name="settings_language_title">应用语言</string>
+    <string name="settings_theme_preview_time">2小时</string>
+    <string name="language_chinese">中文</string>
+    <string name="language_english">English</string>
+
+    <string name="settings_background_title">自定义背景图</string>
+    <string name="settings_background_desc">为主页和 7 天页面设置背景图片，增强个性化展示。</string>
+    <string name="settings_background_none">未设置背景图</string>
+    <string name="settings_background_not_set">当前使用默认背景</string>
+    <string name="settings_background_set">已设置自定义背景图</string>
+    <string name="settings_pick_background">选择背景图</string>
+    <string name="settings_clear_background">清除背景图</string>
+
+    <string name="theme_dark_minimal_name">暗色极简</string>
+    <string name="theme_neon_cyber_name">霓虹赛博</string>
+    <string name="theme_soft_pastel_name">柔和彩色</string>
+    <string name="theme_dark_short">暗色</string>
+    <string name="theme_neon_short">霓虹</string>
+    <string name="theme_pastel_short">柔和</string>
+
+    <string name="about_title">关于</string>
+    <string name="about_back">返回</string>
+    <string name="about_version_format">版本 %1$s (%2$d)</string>
+    <string name="about_version_fallback">版本 1.0</string>
+    <string name="about_description_title">应用简介</string>
+    <string name="about_description_content">帮助你更高效地了解和管理应用使用时长。</string>
+    <string name="about_developer_title">开发者</string>
+    <string name="about_developer_content">由 Abhinav Vaidya 开发</string>
+
+    <string name="widget_name">看什么小组件</string>
+    <string name="widget_description">显示今日总屏幕时长，并提供游戏化进度追踪</string>
+    <string name="widget_loading">加载中...</string>
+    <string name="widget_no_data">暂无数据</string>
+    <string name="widget_screen_time">屏幕时间</string>
+    <string name="widget_today">今天</string>
+    <string name="widget_tap_to_open">点击打开应用</string>
+    <string name="widget_tap_to_refresh">点击刷新</string>
+    <string name="widget_not_updated_yet">尚未更新</string>
+    <string name="widget_error">错误</string>
+    <string name="widget_updated_at">更新于 %1$s</string>
+    <string name="widget_preview_time">2小时30分钟</string>
+
+    <string name="widget_settings_title">小组件设置</string>
+    <string name="widget_theme_title">小组件主题</string>
+    <string name="widget_theme_dark">暗色极简</string>
+    <string name="widget_theme_neon">霓虹赛博</string>
+    <string name="widget_theme_pastel">柔和彩色</string>
+    <string name="widget_show_top_app">显示最常用应用</string>
+    <string name="widget_daily_goal">每日使用目标</string>
 </resources>
+

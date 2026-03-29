@@ -1,9 +1,12 @@
 package com.abhinavvaidya.appusagetracker.data.local
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.util.Log
+import com.abhinavvaidya.appusagetracker.data.preferences.WidgetPreferencesRepository
 import com.abhinavvaidya.appusagetracker.domain.model.AppUsageInfo
 import com.abhinavvaidya.appusagetracker.domain.model.DailyUsageSummary
 import com.abhinavvaidya.appusagetracker.system.usage.UsageStatsHelper
@@ -12,20 +15,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
-/**
- * Repository for managing app usage data.
- *
- * This class acts as a single source of truth for usage data by:
- * 1. Fetching fresh data from UsageStatsHelper
- * 2. Caching data in Room database for offline access
- * 3. Providing Flow-based APIs for reactive UI updates
- * 4. Managing widget cache for battery-efficient widget updates
- *
- * BATTERY OPTIMIZATION:
- * - Widget reads ONLY from cached data, never directly from UsageStats
- * - Cache is updated at controlled intervals via WorkManager
- * - Smart cache invalidation based on date changes
- */
+data class DailyUsageSnapshot(
+    val usageList: List<AppUsageInfo>,
+    val launchCount: Int,
+    val unlockCount: Int,
+    val notificationCount: Int,
+    val timeFragmentPercent: Int
+)
+
 class UsageRepository(context: Context) {
 
     companion object {
@@ -37,106 +34,59 @@ class UsageRepository(context: Context) {
     private val widgetCacheDao = database.widgetCacheDao()
     private val usageStatsHelper = UsageStatsHelper(context)
     private val packageManager: PackageManager = context.packageManager
+    private val preferencesRepository = WidgetPreferencesRepository(context)
 
-    init {
-        Log.d(TAG, "UsageRepository initialized, packageManager=$packageManager")
-    }
-
-    /**
-     * Loads the app icon for the given package name.
-     * Returns null if the package is not found (common for system/virtual packages in emulators).
-     */
-    private fun getAppIcon(packageName: String): Drawable? {
-        return try {
-            packageManager.getApplicationIcon(packageName)
-        } catch (e: PackageManager.NameNotFoundException) {
-            // Package not found - this is expected for some system packages
-            // or uninstalled apps that still show in usage stats
-            Log.v(TAG, "Package $packageName not found for icon loading")
-            null
-        } catch (e: Exception) {
-            Log.w(TAG, "Error loading icon for $packageName: ${e.message}")
-            null
-        }
-    }
-
-    /**
-     * Checks if the app has Usage Access permission.
-     */
     fun hasUsagePermission(): Boolean = usageStatsHelper.hasUsagePermission()
 
-    /**
-     * Refreshes today's usage data from the system and caches it in the database.
-     * This should be called before reading data to ensure freshness.
-     */
     suspend fun refreshTodayUsage() = withContext(Dispatchers.IO) {
-        Log.d(TAG, "Refreshing today's usage data")
-
-        // Check permission first
-        if (!hasUsagePermission()) {
-            Log.w(TAG, "Cannot refresh: No usage permission")
-            return@withContext
-        }
+        if (!hasUsagePermission()) return@withContext
 
         val today = usageStatsHelper.getDateString()
-        val usageList = usageStatsHelper.getTodayUsage()
-
-        Log.d(TAG, "Fetched ${usageList.size} apps for today ($today)")
-
-        // Clear old data for today and insert fresh data
-        dao.deleteUsageForDate(today)
-
-        if (usageList.isNotEmpty()) {
-            val entities = usageList.map { usage ->
-                AppUsageEntity(
-                    packageName = usage.packageName,
-                    appName = usage.appName,
-                    usageTimeMillis = usage.usageTimeMillis,
-                    date = today
-                )
-            }
-            dao.insertAll(entities)
-            Log.d(TAG, "Cached ${entities.size} usage entries for $today")
-        }
+        val usageList = applyDisplayFilters(usageStatsHelper.getTodayUsage())
+        persistUsageForDate(today, usageList)
     }
 
-    /**
-     * Refreshes weekly usage data (last 7 days) from the system.
-     */
     suspend fun refreshWeeklyUsage() = withContext(Dispatchers.IO) {
-        Log.d(TAG, "Refreshing weekly usage data")
-
-        if (!hasUsagePermission()) {
-            Log.w(TAG, "Cannot refresh: No usage permission")
-            return@withContext
-        }
+        if (!hasUsagePermission()) return@withContext
 
         for (daysAgo in 0..6) {
             val date = usageStatsHelper.getDateString(daysAgo)
-            val usageList = usageStatsHelper.getUsageForDate(daysAgo)
-
-            Log.d(TAG, "Day $daysAgo ($date): ${usageList.size} apps")
-
-            dao.deleteUsageForDate(date)
-
-            if (usageList.isNotEmpty()) {
-                val entities = usageList.map { usage ->
-                    AppUsageEntity(
-                        packageName = usage.packageName,
-                        appName = usage.appName,
-                        usageTimeMillis = usage.usageTimeMillis,
-                        date = date
-                    )
-                }
-                dao.insertAll(entities)
-            }
+            val usageList = applyDisplayFilters(usageStatsHelper.getUsageForDate(daysAgo))
+            persistUsageForDate(date, usageList)
         }
     }
 
-    /**
-     * Returns a Flow of today's usage data from the database.
-     * Subscribe to this for reactive UI updates.
-     */
+    suspend fun getUsageSnapshotForDate(daysAgo: Int): DailyUsageSnapshot = withContext(Dispatchers.IO) {
+        val safeDaysAgo = daysAgo.coerceAtLeast(0)
+        val date = usageStatsHelper.getDateString(safeDaysAgo)
+        val liveUsageList = applyDisplayFilters(usageStatsHelper.getUsageForDate(safeDaysAgo))
+
+        val usageList = when {
+            liveUsageList.isNotEmpty() -> liveUsageList
+            safeDaysAgo == 0 -> liveUsageList
+            else -> getCachedUsageForDate(date)
+        }
+
+        if (liveUsageList.isNotEmpty() || safeDaysAgo == 0) {
+            persistUsageForDate(date, liveUsageList)
+        }
+
+        if (safeDaysAgo == 0) {
+            refreshWidgetCacheFromUsage(liveUsageList, date)
+        }
+
+        val behaviorMetrics = usageStatsHelper.getBehaviorMetricsForDate(safeDaysAgo)
+        val metricsFromEventsAvailable = liveUsageList.isNotEmpty() || safeDaysAgo == 0
+
+        DailyUsageSnapshot(
+            usageList = usageList,
+            launchCount = usageList.sumOf { it.launchCount },
+            unlockCount = if (metricsFromEventsAvailable) behaviorMetrics.unlockCount else 0,
+            notificationCount = if (metricsFromEventsAvailable) behaviorMetrics.notificationCount else 0,
+            timeFragmentPercent = if (metricsFromEventsAvailable) behaviorMetrics.timeFragmentPercent else 0
+        )
+    }
+
     fun getTodayUsageFlow(): Flow<List<AppUsageInfo>> {
         val today = usageStatsHelper.getDateString()
         return dao.getUsageForDate(today).map { entities ->
@@ -151,9 +101,6 @@ class UsageRepository(context: Context) {
         }
     }
 
-    /**
-     * Returns a Flow of weekly usage summaries.
-     */
     fun getWeeklyUsageFlow(): Flow<List<DailyUsageSummary>> {
         val dates = usageStatsHelper.getLast7DaysDates()
         return dao.getUsageForDates(dates).map { entities ->
@@ -176,79 +123,107 @@ class UsageRepository(context: Context) {
         }
     }
 
-    /**
-     * Returns today's usage data directly from the system (not from cache).
-     * Use this for the most up-to-date data.
-     */
-    fun getTodayUsageDirect(): List<AppUsageInfo> {
-        Log.d(TAG, "Getting today's usage directly from system")
-        return usageStatsHelper.getTodayUsage()
+    suspend fun getTodayUsageDirect(): List<AppUsageInfo> = withContext(Dispatchers.IO) {
+        applyDisplayFilters(usageStatsHelper.getTodayUsage())
     }
 
-    // ==================== WIDGET CACHE METHODS ====================
-    // These methods support battery-efficient widget updates
+    suspend fun getUsageForDateDirect(daysAgo: Int): List<AppUsageInfo> = withContext(Dispatchers.IO) {
+        applyDisplayFilters(usageStatsHelper.getUsageForDate(daysAgo.coerceAtLeast(0)))
+    }
 
-    /**
-     * Gets cached widget data for today.
-     * Widget should ALWAYS use this instead of querying UsageStats directly.
-     *
-     * @return WidgetCacheEntity or null if no cache exists
-     */
     suspend fun getWidgetCache(): WidgetCacheEntity? = withContext(Dispatchers.IO) {
         val today = usageStatsHelper.getDateString()
         widgetCacheDao.getCacheForDate(today)
     }
 
-    /**
-     * Checks if widget cache is fresh enough to use.
-     *
-     * @param maxAgeMinutes Maximum age of cache in minutes
-     * @return true if cache exists and is fresh enough
-     */
     suspend fun isWidgetCacheFresh(maxAgeMinutes: Int = 30): Boolean = withContext(Dispatchers.IO) {
         val today = usageStatsHelper.getDateString()
-        val cache = widgetCacheDao.getCacheForDate(today)
-
-        if (cache == null) {
-            Log.d(TAG, "Widget cache miss: no cache for today")
-            return@withContext false
-        }
+        val cache = widgetCacheDao.getCacheForDate(today) ?: return@withContext false
 
         val ageMinutes = (System.currentTimeMillis() - cache.lastUpdatedTimestamp) / (1000 * 60)
-        val isFresh = ageMinutes < maxAgeMinutes
-
-        Log.d(TAG, "Widget cache age: ${ageMinutes}m, fresh: $isFresh (max: ${maxAgeMinutes}m)")
-        isFresh
+        ageMinutes < maxAgeMinutes
     }
 
-    /**
-     * Refreshes widget cache with current usage data.
-     * Called by WorkManager at controlled intervals.
-     *
-     * BATTERY OPTIMIZATION:
-     * - Only queries UsageStats when cache is stale
-     * - Computes summary data once and caches it
-     * - Widget reads from cache, avoiding repeated system queries
-     */
     suspend fun refreshWidgetCache() = withContext(Dispatchers.IO) {
-        Log.d(TAG, "Refreshing widget cache")
+        if (!hasUsagePermission()) return@withContext
 
-        if (!hasUsagePermission()) {
-            Log.w(TAG, "Cannot refresh widget cache: No usage permission")
-            return@withContext
+        val today = usageStatsHelper.getDateString()
+        val usageList = applyDisplayFilters(usageStatsHelper.getTodayUsage())
+        refreshWidgetCacheFromUsage(usageList, today)
+    }
+
+    fun getTodayDateString(): String = usageStatsHelper.getDateString()
+
+    fun getDateString(daysAgo: Int): String = usageStatsHelper.getDateString(daysAgo)
+
+    private suspend fun applyDisplayFilters(usageList: List<AppUsageInfo>): List<AppUsageInfo> {
+        if (usageList.isEmpty()) return usageList
+
+        val excludeSystemApps = preferencesRepository.getExcludeSystemApps()
+        val excludedPackages = preferencesRepository.getExcludedPackages()
+
+        val filtered = usageList
+            .filterNot { excludedPackages.contains(it.packageName) }
+            .filterNot { excludeSystemApps && isSystemApp(it.packageName) }
+            .sortedByDescending { it.usageTimeMillis }
+
+        val totalMillis = filtered.sumOf { it.usageTimeMillis }
+        if (totalMillis <= 0L) {
+            return filtered
         }
 
-        // Get fresh usage data
-        val usageList = usageStatsHelper.getTodayUsage()
+        return filtered.mapIndexed { index, app ->
+            app.copy(
+                usagePercentage = (app.usageTimeMillis.toFloat() / totalMillis.toFloat()) * 100f,
+                rank = index + 1
+            )
+        }
+    }
 
-        // Calculate totals
+    private suspend fun getCachedUsageForDate(date: String): List<AppUsageInfo> {
+        val cached = dao.getUsageForDateOnce(date)
+            .map { entity ->
+                AppUsageInfo(
+                    packageName = entity.packageName,
+                    appName = entity.appName,
+                    usageTimeMillis = entity.usageTimeMillis,
+                    appIcon = getAppIcon(entity.packageName)
+                )
+            }
+            .sortedByDescending { it.usageTimeMillis }
+
+        val totalMillis = cached.sumOf { it.usageTimeMillis }
+        if (totalMillis <= 0L) return cached
+
+        return cached.mapIndexed { index, app ->
+            app.copy(
+                usagePercentage = (app.usageTimeMillis.toFloat() / totalMillis.toFloat()) * 100f,
+                rank = index + 1
+            )
+        }
+    }
+
+    private suspend fun persistUsageForDate(date: String, usageList: List<AppUsageInfo>) {
+        dao.deleteUsageForDate(date)
+        if (usageList.isNotEmpty()) {
+            val entities = usageList.map { usage ->
+                AppUsageEntity(
+                    packageName = usage.packageName,
+                    appName = usage.appName,
+                    usageTimeMillis = usage.usageTimeMillis,
+                    date = date
+                )
+            }
+            dao.insertAll(entities)
+        }
+    }
+
+    private suspend fun refreshWidgetCacheFromUsage(usageList: List<AppUsageInfo>, date: String) {
         val totalMillis = usageList.sumOf { it.usageTimeMillis }
         val topApp = usageList.maxByOrNull { it.usageTimeMillis }
-        val today = usageStatsHelper.getDateString()
 
-        // Create cache entry
         val cacheEntry = WidgetCacheEntity(
-            dateString = today,
+            dateString = date,
             totalScreenTimeMillis = totalMillis,
             topAppPackageName = topApp?.packageName,
             topAppName = topApp?.appName,
@@ -258,16 +233,46 @@ class UsageRepository(context: Context) {
         )
 
         widgetCacheDao.upsertCache(cacheEntry)
-
-        // Cleanup old cache entries
         widgetCacheDao.cleanupOldCache()
 
-        Log.d(TAG, "Widget cache updated: ${totalMillis / (1000 * 60)}m total, top: ${topApp?.appName}")
+        Log.d(TAG, "Widget cache updated: ${totalMillis / (1000 * 60)}m")
     }
 
-    /**
-     * Gets the current date string for cache key.
-     */
-    fun getTodayDateString(): String = usageStatsHelper.getDateString()
-}
+    private fun getAppIcon(packageName: String): Drawable? {
+        return try {
+            packageManager.getApplicationIcon(packageName)
+        } catch (e: PackageManager.NameNotFoundException) {
+            getLaunchAppIcon(packageName)
+        } catch (_: Exception) {
+            null
+        }
+    }
 
+    private fun getLaunchAppIcon(packageName: String): Drawable? {
+        return try {
+            val launchIntent = packageManager.getLaunchIntentForPackage(packageName) ?: return null
+            val resolveInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.resolveActivity(launchIntent, PackageManager.ResolveInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.resolveActivity(launchIntent, 0)
+            }
+            resolveInfo?.loadIcon(packageManager)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun isSystemApp(packageName: String): Boolean {
+        return try {
+            val appInfo = packageManager.getApplicationInfo(packageName, 0)
+            val isSystem = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+            val isUpdatedSystem = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+            isSystem || isUpdatedSystem
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        } catch (_: Exception) {
+            false
+        }
+    }
+}
