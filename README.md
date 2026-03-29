@@ -55,3 +55,9 @@ Debug APK 默认输出（带版本号）：
 
 ## 许可证
 仅供学习与个人使用。
+
+## GitHub Releases
+- [v1.3.0](https://github.com/T8numen/kanwhat-app-usage-tracker/releases/tag/v1.3.0)
+- [v1.4.0](https://github.com/T8numen/kanwhat-app-usage-tracker/releases/tag/v1.4.0)
+- [v1.5.0](https://github.com/T8numen/kanwhat-app-usage-tracker/releases/tag/v1.5.0)
+- [v1.5.1](https://github.com/T8numen/kanwhat-app-usage-tracker/releases/tag/v1.5.1)
