@@ -1,4 +1,4 @@
-*.iml
+﻿*.iml
 .gradle
 /local.properties
 /.idea/caches
@@ -18,4 +18,8 @@ local.properties
 keystore.properties
 *.jks
 *.keystore
-/apk-history
+
+# Keep archived debug APKs in repo
+/apk-history/*
+!/apk-history/debug/
+!/apk-history/debug/*.apk
