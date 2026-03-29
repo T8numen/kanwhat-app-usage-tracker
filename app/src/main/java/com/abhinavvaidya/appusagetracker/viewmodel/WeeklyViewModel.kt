@@ -32,6 +32,7 @@ data class WeeklyUiState(
     val averageDailyTimeMillis: Long = 0L,
     val rangeStartDate: String = "",
     val rangeEndDate: String = "",
+    val showPackageName: Boolean = true,
     val backgroundImageUri: String? = null,
     val error: String? = null
 )
@@ -117,6 +118,7 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
                     val averageDailyMillis = if (dayUsages.isEmpty()) 0L else totalWeeklyMillis / dayUsages.size
 
                     val backgroundUri = preferencesRepository.getBackgroundImageUri()
+                    val showPackageName = preferencesRepository.getShowPackageName()
 
                     Triple(
                         WeeklyUiState(
@@ -127,6 +129,7 @@ class WeeklyViewModel(application: Application) : AndroidViewModel(application) 
                             averageDailyTimeMillis = averageDailyMillis,
                             rangeStartDate = dayUsages.firstOrNull()?.date.orEmpty(),
                             rangeEndDate = dayUsages.lastOrNull()?.date.orEmpty(),
+                            showPackageName = showPackageName,
                             backgroundImageUri = backgroundUri,
                             error = null
                         ),

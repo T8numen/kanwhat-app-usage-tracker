@@ -35,6 +35,7 @@ class WidgetPreferencesRepository(private val context: Context) {
         private val WIDGET_THEME_KEY = intPreferencesKey("widget_theme")
         private val DAILY_USAGE_GOAL_KEY = longPreferencesKey("daily_usage_goal")
         private val SHOW_TOP_APP_KEY = intPreferencesKey("show_top_app")
+        private val SHOW_PACKAGE_NAME_KEY = intPreferencesKey("show_package_name")
         private val EXCLUDE_SYSTEM_APPS_KEY = intPreferencesKey("exclude_system_apps")
         private val EXCLUDED_PACKAGES_KEY = stringSetPreferencesKey("excluded_packages")
         private val APP_LIST_METRIC_KEY = intPreferencesKey("app_list_metric")
@@ -56,6 +57,10 @@ class WidgetPreferencesRepository(private val context: Context) {
 
     val showTopAppFlow: Flow<Boolean> = dataStore.data.map { preferences ->
         (preferences[SHOW_TOP_APP_KEY] ?: 1) == 1
+    }
+
+    val showPackageNameFlow: Flow<Boolean> = dataStore.data.map { preferences ->
+        (preferences[SHOW_PACKAGE_NAME_KEY] ?: 1) == 1
     }
 
     val excludeSystemAppsFlow: Flow<Boolean> = dataStore.data.map { preferences ->
@@ -84,6 +89,8 @@ class WidgetPreferencesRepository(private val context: Context) {
 
     suspend fun getShowTopApp(): Boolean = showTopAppFlow.first()
 
+    suspend fun getShowPackageName(): Boolean = showPackageNameFlow.first()
+
     suspend fun getExcludeSystemApps(): Boolean = excludeSystemAppsFlow.first()
 
     suspend fun getExcludedPackages(): Set<String> = excludedPackagesFlow.first()
@@ -107,6 +114,12 @@ class WidgetPreferencesRepository(private val context: Context) {
     suspend fun setShowTopApp(show: Boolean) {
         dataStore.edit { preferences ->
             preferences[SHOW_TOP_APP_KEY] = if (show) 1 else 0
+        }
+    }
+
+    suspend fun setShowPackageName(show: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SHOW_PACKAGE_NAME_KEY] = if (show) 1 else 0
         }
     }
 

@@ -130,6 +130,7 @@ fun WeeklyScreen(
 
                 WeeklyTopAppList(
                     apps = uiState.topApps,
+                    showPackageName = uiState.showPackageName,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -311,6 +312,7 @@ private fun SevenDayUsageChart(
 @Composable
 private fun WeeklyTopAppList(
     apps: List<AppUsageInfo>,
+    showPackageName: Boolean,
     modifier: Modifier = Modifier
 ) {
     val maxUsageMillis = remember(apps) { apps.maxOfOrNull { it.usageTimeMillis }?.coerceAtLeast(1L) ?: 1L }
@@ -346,7 +348,8 @@ private fun WeeklyTopAppList(
                 ) { app ->
                     WeeklyAppRow(
                         app = app,
-                        maxUsageMillis = maxUsageMillis
+                        maxUsageMillis = maxUsageMillis,
+                        showPackageName = showPackageName
                     )
                 }
             }
@@ -357,7 +360,8 @@ private fun WeeklyTopAppList(
 @Composable
 private fun WeeklyAppRow(
     app: AppUsageInfo,
-    maxUsageMillis: Long
+    maxUsageMillis: Long,
+    showPackageName: Boolean
 ) {
     val progress = (app.usageTimeMillis.toFloat() / maxUsageMillis.toFloat()).coerceIn(0f, 1f)
 
@@ -397,12 +401,14 @@ private fun WeeklyAppRow(
                     color = Color.White,
                     maxLines = 1
                 )
-                Text(
-                    text = app.packageName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f),
-                    maxLines = 1
-                )
+                if (showPackageName) {
+                    Text(
+                        text = app.packageName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.7f),
+                        maxLines = 1
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(8.dp))

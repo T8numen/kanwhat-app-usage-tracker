@@ -28,6 +28,7 @@ data class HomeUiState(
     val canGoToNewerDate: Boolean = false,
     val canGoToOlderDate: Boolean = true,
     val listMetric: AppListMetric = AppListMetric.USAGE_TIME,
+    val showPackageName: Boolean = true,
     val timeFragmentPercent: Int = 0,
     val launchCount: Int = 0,
     val unlockCount: Int = 0,
@@ -56,6 +57,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         observeListMetric()
+        observeShowPackageName()
         observeBackgroundImage()
         checkPermissionAndLoad()
     }
@@ -72,6 +74,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             preferencesRepository.backgroundImageUriFlow.collect { uri ->
                 _uiState.update { it.copy(backgroundImageUri = uri) }
+            }
+        }
+    }
+
+    private fun observeShowPackageName() {
+        viewModelScope.launch {
+            preferencesRepository.showPackageNameFlow.collect { showPackageName ->
+                _uiState.update { it.copy(showPackageName = showPackageName) }
             }
         }
     }

@@ -64,6 +64,8 @@
     <string name="settings_daily_goal_desc">随着接近目标，进度环会逐步填充</string>
     <string name="settings_show_top_app_title">显示最常用应用</string>
     <string name="settings_show_top_app_desc">在小组件中显示你使用最多的应用</string>
+    <string name="settings_show_package_name_title">显示应用包名</string>
+    <string name="settings_show_package_name_desc">控制首页与7天页面的应用列表是否显示完整包名</string>
     <string name="settings_header_title">设置</string>
     <string name="settings_header_subtitle">个性化你的使用统计界面</string>
     <string name="settings_about_title">关于</string>

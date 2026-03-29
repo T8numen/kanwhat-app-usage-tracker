@@ -250,6 +250,15 @@ fun WidgetSettingsScreen(
             onToggle = { viewModel.setShowTopApp(it) }
         )
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        SettingsToggle(
+            title = stringResource(id = R.string.settings_show_package_name_title),
+            description = stringResource(id = R.string.settings_show_package_name_desc),
+            isEnabled = uiState.showPackageName,
+            onToggle = { viewModel.setShowPackageName(it) }
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(

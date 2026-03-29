@@ -48,6 +48,7 @@ fun AppUsageRow(
     modifier: Modifier = Modifier,
     maxUsageMinutes: Long = 180L,
     listMetric: AppListMetric = AppListMetric.USAGE_TIME,
+    showPackageName: Boolean = true,
     compact: Boolean = false
 ) {
     val context = LocalContext.current
@@ -107,14 +108,16 @@ fun AppUsageRow(
                         overflow = TextOverflow.Ellipsis,
                         color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(1.dp))
-                    Text(
-                        text = appUsageInfo.packageName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    if (showPackageName) {
+                        Spacer(modifier = Modifier.height(1.dp))
+                        Text(
+                            text = appUsageInfo.packageName,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
 

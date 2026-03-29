@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -111,6 +112,7 @@ fun HomeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .statusBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 HeaderBar(onOpenSettings = onOpenSettings)
@@ -141,6 +143,7 @@ fun HomeScreen(
                     AppListSection(
                         apps = uiState.appUsageList,
                         listMetricOrdinal = uiState.listMetric.ordinal,
+                        showPackageName = uiState.showPackageName,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -213,7 +216,7 @@ private fun HeaderBar(onOpenSettings: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 2.dp),
+            .padding(top = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.fillMaxWidth(0.5f)) {
@@ -285,6 +288,7 @@ private fun UsageRing(
 
     val ringSize = 176.dp
     val strokeWidth = 12.dp
+    val iconGap = 30.dp
 
     Box(
         modifier = Modifier
@@ -312,22 +316,27 @@ private fun UsageRing(
 
         Text(
             text = totalScreenTime,
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
 
-        RingIcons(segments = ringSegments, ringRadius = ringSize / 2f)
+        RingIcons(
+            segments = ringSegments,
+            ringRadius = ringSize / 2f,
+            iconGap = iconGap
+        )
     }
 }
 
 @Composable
 private fun RingIcons(
     segments: List<RingSegment>,
-    ringRadius: Dp
+    ringRadius: Dp,
+    iconGap: Dp
 ) {
     val density = LocalDensity.current
-    val orbitRadius = ringRadius + 18.dp
+    val orbitRadius = ringRadius + iconGap
 
     segments.forEach { segment ->
         val iconBitmap = remember(segment.app.appIcon) { segment.app.appIcon?.toBitmapSafe() }
@@ -341,14 +350,14 @@ private fun RingIcons(
                 contentDescription = segment.app.appName,
                 modifier = Modifier
                     .offset(x = x, y = y)
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(9.dp))
             )
         } else {
             Box(
                 modifier = Modifier
                     .offset(x = x, y = y)
-                    .size(34.dp)
+                    .size(30.dp)
                     .clip(CircleShape)
                     .background(GradientPurple.copy(alpha = 0.6f))
             )
@@ -443,6 +452,7 @@ private fun StatItem(
 private fun AppListSection(
     apps: List<AppUsageInfo>,
     listMetricOrdinal: Int,
+    showPackageName: Boolean,
     modifier: Modifier = Modifier
 ) {
     val listMetric = remember(listMetricOrdinal) {
@@ -484,6 +494,7 @@ private fun AppListSection(
                     AppUsageRow(
                         appUsageInfo = app,
                         listMetric = listMetric,
+                        showPackageName = showPackageName,
                         compact = true
                     )
                 }

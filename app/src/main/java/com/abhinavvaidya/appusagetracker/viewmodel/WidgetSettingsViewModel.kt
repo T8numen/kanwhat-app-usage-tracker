@@ -23,6 +23,7 @@ data class WidgetSettingsUiState(
     val selectedTheme: WidgetTheme = WidgetTheme.DARK_MINIMAL,
     val dailyGoalHours: Float = 4f,
     val showTopApp: Boolean = true,
+    val showPackageName: Boolean = true,
     val excludeSystemApps: Boolean = true,
     val excludedPackages: Set<String> = emptySet(),
     val appListMetric: AppListMetric = AppListMetric.USAGE_TIME,
@@ -73,17 +74,26 @@ class WidgetSettingsViewModel(application: Application) : AndroidViewModel(appli
     private fun loadPreferences() {
         viewModelScope.launch {
             try {
+                val appDisplayFlow = combine(
+                    preferencesRepository.showTopAppFlow,
+                    preferencesRepository.showPackageNameFlow
+                ) { showTopApp, showPackageName ->
+                    showTopApp to showPackageName
+                }
+
                 val baseFlow = combine(
                     preferencesRepository.widgetThemeFlow,
                     preferencesRepository.dailyUsageGoalFlow,
-                    preferencesRepository.showTopAppFlow,
+                    appDisplayFlow,
                     preferencesRepository.excludeSystemAppsFlow,
                     preferencesRepository.excludedPackagesFlow
-                ) { theme, goalMs, showTopApp, excludeSystemApps, excludedPackages ->
+                ) { theme, goalMs, appDisplay, excludeSystemApps, excludedPackages ->
+                    val (showTopApp, showPackageName) = appDisplay
                     WidgetSettingsUiState(
                         selectedTheme = theme,
                         dailyGoalHours = goalMs / (60 * 60 * 1000f),
                         showTopApp = showTopApp,
+                        showPackageName = showPackageName,
                         excludeSystemApps = excludeSystemApps,
                         excludedPackages = excludedPackages,
                         isLoading = false
@@ -127,6 +137,12 @@ class WidgetSettingsViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             preferencesRepository.setShowTopApp(show)
             triggerWidgetUpdate()
+        }
+    }
+
+    fun setShowPackageName(show: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setShowPackageName(show)
         }
     }
 

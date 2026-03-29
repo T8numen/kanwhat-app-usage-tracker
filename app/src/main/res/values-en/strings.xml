@@ -64,6 +64,8 @@
     <string name="settings_daily_goal_desc">The progress ring fills as you approach this goal.</string>
     <string name="settings_show_top_app_title">Show Top App</string>
     <string name="settings_show_top_app_desc">Show your most used app in the widget.</string>
+    <string name="settings_show_package_name_title">Show Package Name</string>
+    <string name="settings_show_package_name_desc">Controls whether full package names are shown in Home and 7-day app lists.</string>
     <string name="settings_header_title">Settings</string>
     <string name="settings_header_subtitle">Personalize your usage dashboard</string>
     <string name="settings_about_title">About</string>

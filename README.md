@@ -41,12 +41,13 @@ Debug APK 默认输出（带版本号）：
 - `app-debug-v1.4.0-5.apk`
 - `app-debug-v1.5.0-6.apk`
 - `app-debug-v1.5.1-7.apk`
+- `app-debug-v1.5.2-8.apk`
 
 > 以上 APK 同步保存在仓库目录 `apk-history/debug/`，并在 GitHub Releases 中提供下载。
 
 ## 当前版本
-- Version Name: `1.5.1`
-- Version Code: `7`
+- Version Name: `1.5.2`
+- Version Code: `8`
 
 ## 开发环境
 - Android Studio（Hedgehog+）
@@ -61,3 +62,4 @@ Debug APK 默认输出（带版本号）：
 - [v1.4.0](https://github.com/T8numen/kanwhat-app-usage-tracker/releases/tag/v1.4.0)
 - [v1.5.0](https://github.com/T8numen/kanwhat-app-usage-tracker/releases/tag/v1.5.0)
 - [v1.5.1](https://github.com/T8numen/kanwhat-app-usage-tracker/releases/tag/v1.5.1)
+- [v1.5.2](https://github.com/T8numen/kanwhat-app-usage-tracker/releases/tag/v1.5.2)
